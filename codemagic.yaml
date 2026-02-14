@@ -7,7 +7,7 @@
 workflows:
   ios-release:
     name: iOS Release
-    working_directory: GezondheidsTrackerFlutter
+    working_directory: .  # Use GezondheidsTrackerFlutter if app is in subfolder
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
@@ -19,13 +19,11 @@ workflows:
       xcode: latest
       cocoapods: default
     scripts:
-      - name: Set up Flutter
-        script: flutter upgrade
       - name: Get Flutter packages
         script: flutter pub get
       - name: Build IPA
         script: |
           echo "Building iOS with API: $API_URL"
-          flutter build ipa --release --dart-define=API_URL=$API_URL
+          flutter build ipa --release --dart-define=APIURL=$API_URL
     artifacts:
       - build/ios/ipa/*.ipa
