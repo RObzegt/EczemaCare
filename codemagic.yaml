@@ -1,6 +1,6 @@
 # Codemagic CI/CD for Gezondheids Tracker - iOS
-# Create group "api_config" in Codemagic > Settings > Environment variables
-# Add variable: APIURL = https://eczemacare.onrender.com
+# Group "apiconfig" in Codemagic > Environment variables
+# Variable: APIURL = https://eczemacare.onrender.com
 #
 # For code signing: add "ios_credentials" group with distribution cert + provisioning profile
 
@@ -12,18 +12,37 @@ workflows:
     instance_type: mac_mini_m2
     environment:
       groups:
-        - api_config
+        - apiconfig
       vars:
         BUILD_TYPE: "release"
         BUNDLE_ID: "com.example.gezondheidsTracker"
       xcode: latest
       cocoapods: default
     scripts:
-      - name: Get Flutter packages
-        script: flutter pub get
-      - name: Build IPA
+      - name: Build iOS
         script: |
+          # Find Flutter project (root or subfolder)
+          if [ -f "pubspec.yaml" ]; then
+            echo "Flutter project at repo root"
+          elif [ -d "GezondheidsTrackerFlutter" ] && [ -f "GezondheidsTrackerFlutter/pubspec.yaml" ]; then
+            cd GezondheidsTrackerFlutter
+            echo "Using GezondheidsTrackerFlutter/"
+          elif [ -d "EczemaCare" ] && [ -f "EczemaCare/pubspec.yaml" ]; then
+            cd EczemaCare
+            echo "Using EczemaCare/"
+          else
+            PROJ=$(find . -name "pubspec.yaml" -maxdepth 4 2>/dev/null | head -1)
+            if [ -n "$PROJ" ]; then
+              cd "$(dirname "$PROJ")"
+              echo "Using $(dirname "$PROJ")/"
+            else
+              echo "ERROR: No pubspec.yaml found. Repo contents:"
+              ls -la
+              exit 1
+            fi
+          fi
+          flutter pub get
           echo "Building iOS with API: $APIURL"
-          flutter build ipa --release --dart-define=APIURL=$APIURL
+          flutter build ipa --release --dart-define=API_URL=$APIURL
     artifacts:
-      - build/ios/ipa/*.ipa
+      - "**/build/ios/ipa/*.ipa"
