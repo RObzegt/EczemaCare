@@ -1,6 +1,6 @@
 # Codemagic CI/CD for Gezondheids Tracker - iOS
 # Create group "api_config" in Codemagic > Settings > Environment variables
-# Add variable: API_URL = https://eczemacare.onrender.com
+# Add variable: APIURL = https://eczemacare.onrender.com
 #
 # For code signing: add "ios_credentials" group with distribution cert + provisioning profile
 
@@ -23,7 +23,7 @@ workflows:
         script: flutter pub get
       - name: Build IPA
         script: |
-          echo "Building iOS with API: $API_URL"
-          flutter build ipa --release --dart-define=APIURL=$API_URL
+          echo "Building iOS with API: $APIURL"
+          flutter build ipa --release --dart-define=APIURL=$APIURL
     artifacts:
       - build/ios/ipa/*.ipa
