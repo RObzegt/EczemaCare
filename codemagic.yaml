@@ -21,27 +21,32 @@ workflows:
     scripts:
       - name: Build iOS
         script: |
-          # Find Flutter project (root or subfolder)
-          if [ -f "pubspec.yaml" ]; then
-            echo "Flutter project at repo root"
-          elif [ -d "GezondheidsTrackerFlutter" ] && [ -f "GezondheidsTrackerFlutter/pubspec.yaml" ]; then
-            cd GezondheidsTrackerFlutter
-            echo "Using GezondheidsTrackerFlutter/"
-          elif [ -d "EczemaCare" ] && [ -f "EczemaCare/pubspec.yaml" ]; then
-            cd EczemaCare
-            echo "Using EczemaCare/"
-          else
-            PROJ=$(find . -name "pubspec.yaml" -maxdepth 4 2>/dev/null | head -1)
+          # Find Flutter app (must have pubspec.yaml AND lib/main.dart)
+          find_flutter_app() {
+            for dir in . GezondheidsTrackerFlutter EczemaCare app mobile flutter_app; do
+              if [ -f "$dir/pubspec.yaml" ] && [ -f "$dir/lib/main.dart" ]; then
+                echo "$dir"
+                return
+              fi
+            done
+            PROJ=$(find . -path "*/lib/main.dart" -maxdepth 5 2>/dev/null | head -1)
             if [ -n "$PROJ" ]; then
-              cd "$(dirname "$PROJ")"
-              echo "Using $(dirname "$PROJ")/"
-            else
-              echo "ERROR: No pubspec.yaml found. Repo contents:"
-              ls -la
-              exit 1
+              dirname "$(dirname "$PROJ")"
+              return
             fi
+            echo ""
+          }
+          FLUTTER_DIR=$(find_flutter_app)
+          if [ -z "$FLUTTER_DIR" ]; then
+            echo "ERROR: No Flutter app (pubspec.yaml + lib/main.dart) found. Repo contents:"
+            ls -la
+            find . -name "pubspec.yaml" -o -name "main.dart" 2>/dev/null | head -20
+            exit 1
           fi
+          cd "$FLUTTER_DIR"
+          echo "Using Flutter app at: $FLUTTER_DIR"
           flutter pub get
+          flutter create . --platforms=ios
           echo "Building iOS with API: $APIURL"
           flutter build ipa --release --dart-define=API_URL=$APIURL
     artifacts:
