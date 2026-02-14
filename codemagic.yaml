@@ -4,7 +4,7 @@
 
 workflows:
   android-release:
-    name: Android Release
+    name: Apple Release
     max_build_duration: 60
     environment:
       groups:
