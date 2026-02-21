@@ -7,8 +7,8 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      groups:
-        - apple_auth # Variable group for Apple Developer Portal credentials
+      # groups:
+      #   - apple_auth # IMPORTANT: You must create this group in Codemagic UI for iOS code signing to work
       vars:
         APP_ID: 1234567890 # Replace with your App Store Connect App ID
         BUNDLE_ID: "com.orions.eczemacare" # Replace with your Bundle Identifier
@@ -78,4 +78,4 @@ workflows:
     publishing:
       email:
         recipients:
-          - your-email@example.com
+  
