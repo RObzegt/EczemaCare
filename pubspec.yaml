@@ -1,5 +1,5 @@
-name: gezondheids_tracker
-description: Track food intake and health symptoms with AI pattern detection. Monitor eczema, energy, and stress levels daily.
+name: eczema_care
+description: Eczema Care - Track food intake and health symptoms with AI pattern detection.
 publish_to: 'none'
 version: 1.0.0+1
 

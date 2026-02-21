@@ -1,53 +1,81 @@
-# Codemagic CI/CD for Gezondheids Tracker - iOS
-# Group "apiconfig" in Codemagic > Environment variables
-# Variable: APIURL = https://eczemacare.onrender.com
-#
-# For code signing: add "ios_credentials" group with distribution cert + provisioning profile
-
 workflows:
-  ios-release:
-    name: iOS Release
-    working_directory: .  # Use GezondheidsTrackerFlutter if app is in subfolder
-    max_build_duration: 60
+  ios-workflow:
+    name: iOS Workflow
     instance_type: mac_mini_m2
+    max_build_duration: 60
     environment:
-      groups:
-        - apiconfig
-      vars:
-        BUILD_TYPE: "release"
-        BUNDLE_ID: "com.example.gezondheidsTracker"
+      flutter: stable
       xcode: latest
       cocoapods: default
+      groups:
+        - apple_auth # Variable group for Apple Developer Portal credentials
+      vars:
+        APP_ID: 1234567890 # Replace with your App Store Connect App ID
+        BUNDLE_ID: "com.orions.eczemacare" # Replace with your Bundle Identifier
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+          source: true
     scripts:
-      - name: Build iOS
+      - name: Set up code signing settings on Codemagic
         script: |
-          # Find Flutter app (must have pubspec.yaml AND lib/main.dart)
-          find_flutter_app() {
-            for dir in . GezondheidsTrackerFlutter EczemaCare app mobile flutter_app; do
-              if [ -f "$dir/pubspec.yaml" ] && [ -f "$dir/lib/main.dart" ]; then
-                echo "$dir"
-                return
-              fi
-            done
-            PROJ=$(find . -path "*/lib/main.dart" -maxdepth 5 2>/dev/null | head -1)
-            if [ -n "$PROJ" ]; then
-              dirname "$(dirname "$PROJ")"
-              return
-            fi
-            echo ""
-          }
-          FLUTTER_DIR=$(find_flutter_app)
-          if [ -z "$FLUTTER_DIR" ]; then
-            echo "ERROR: No Flutter app (pubspec.yaml + lib/main.dart) found. Repo contents:"
-            ls -la
-            find . -name "pubspec.yaml" -o -name "main.dart" 2>/dev/null | head -20
-            exit 1
-          fi
-          cd "$FLUTTER_DIR"
-          echo "Using Flutter app at: $FLUTTER_DIR"
-          flutter pub get
-          flutter create . --platforms=ios
-          echo "Building iOS with API: $APIURL"
-          flutter build ipa --debug --dart-define=API_URL=$APIURL
+          keychain initialize
+          # app-store-connect fetch-signing-files "$BUNDLE_ID" --project-type ios --install
+          # Associate the fetched signing files with the project
+          # keychain add-certificates
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+      - name: Install pods
+        script: |
+          find . -name "Podfile" -execdir pod install \;
+      - name: Flutter build ipa
+        script: |
+          flutter build ipa --release \
+            --export-options-plist=$HOME/export_options.plist
     artifacts:
-      - "**/build/ios/ipa/*.ipa"
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+    publishing:
+      email:
+        recipients:
+          - your-email@example.com # Replace with your email
+        notify:
+          success: true
+          failure: true
+      # app_store_connect:
+      #   auth: integration
+      #   submit_to_testflight: true
+      #   beta_groups:
+      #     - My Testers
+
+  android-workflow:
+    name: Android Workflow
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: stable
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+          source: true
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+      - name: Build Android APK
+        script: |
+          flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+    publishing:
+      email:
+        recipients:
+          - your-email@example.com
