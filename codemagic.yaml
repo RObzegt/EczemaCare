@@ -20,18 +20,43 @@ workflows:
           include: true
           source: true
     scripts:
-      - name: Set up code signing
+      - name: Initialize keychain
+        script: keychain initialize
+      - name: Generate certificate key
         script: |
-          keychain initialize
-          # Generate a private key for the distribution certificate
-          openssl req -nodes -newkey rsa:2048 -keyout /tmp/cert_key.pem -out /tmp/cert_csr.pem -subj '/CN=TriggerTrace/O=JTY452RWN4'
-          # Fetch/create signing files with the explicit key
+          openssl ecparam -genkey -name prime256v1 -noout -out /tmp/cert_key.pem
+          echo "Certificate key generated"
+          cat /tmp/cert_key.pem | head -1
+      - name: Fetch signing files
+        script: |
+          set -e
+          echo "=== Listing existing certificates ==="
+          app-store-connect certificates list --type IOS_DISTRIBUTION || echo "No existing certs"
+          echo "=== Listing existing profiles ==="
+          app-store-connect profiles list --type IOS_APP_STORE || echo "No existing profiles"
+          echo "=== Fetching/creating signing files ==="
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create \
-            --certificate-key /tmp/cert_key.pem
+            --certificate-key /tmp/cert_key.pem \
+            --verbose
+          echo "=== Done fetching signing files ==="
+          echo "=== Listing certificates after ==="
+          app-store-connect certificates list --type IOS_DISTRIBUTION || echo "No certs found after"
+          echo "=== Listing profiles after ==="
+          app-store-connect profiles list --type IOS_APP_STORE || echo "No profiles found after"
+      - name: Add certificates to keychain
+        script: |
+          echo "=== Adding certificates to keychain ==="
           keychain add-certificates
+          echo "=== Done adding certificates ==="
+      - name: Apply profiles to Xcode project
+        script: |
+          echo "=== Applying profiles ==="
           xcode-project use-profiles --project ios/Runner.xcodeproj
+          echo "=== Done applying profiles ==="
+          echo "=== Checking project signing ==="
+          grep -A 5 "CODE_SIGN" ios/Runner.xcodeproj/project.pbxproj | head -20 || echo "No signing found"
       - name: Get Flutter packages
         script: flutter packages pub get
       - name: Install pods
