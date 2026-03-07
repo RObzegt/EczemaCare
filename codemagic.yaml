@@ -24,27 +24,22 @@ workflows:
         script: keychain initialize
       - name: Generate certificate key
         script: |
-          openssl ecparam -genkey -name prime256v1 -noout -out /tmp/cert_key.pem
-          echo "Certificate key generated"
-          cat /tmp/cert_key.pem | head -1
+          openssl genrsa -out /tmp/cert_key.pem 2048
+          echo "RSA certificate key generated"
       - name: Fetch signing files
         script: |
           set -e
-          echo "=== Listing existing certificates ==="
-          app-store-connect certificates list --type IOS_DISTRIBUTION || echo "No existing certs"
-          echo "=== Listing existing profiles ==="
-          app-store-connect profiles list --type IOS_APP_STORE || echo "No existing profiles"
           echo "=== Fetching/creating signing files ==="
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create \
-            --certificate-key /tmp/cert_key.pem \
+            --certificate-key "$(cat /tmp/cert_key.pem)" \
             --verbose
           echo "=== Done fetching signing files ==="
           echo "=== Listing certificates after ==="
-          app-store-connect certificates list --type IOS_DISTRIBUTION || echo "No certs found after"
+          app-store-connect certificates list --type IOS_DISTRIBUTION || echo "No certs"
           echo "=== Listing profiles after ==="
-          app-store-connect profiles list --type IOS_APP_STORE || echo "No profiles found after"
+          app-store-connect profiles list --type IOS_APP_STORE || echo "No profiles"
       - name: Add certificates to keychain
         script: |
           echo "=== Adding certificates to keychain ==="
