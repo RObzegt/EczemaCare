@@ -1,0 +1,6 @@
+.git
+.gitignore
+.dart_tool
+*.iml
+README.md
+test

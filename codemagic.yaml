@@ -1,0 +1,60 @@
+workflows:
+  ios-workflow:
+    name: iOS Workflow
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - apple_auth # IMPORTANT: Create this group in Codemagic UI with your Apple credentials
+      vars:
+        APP_ID: "6760238014" # EczemaCare Apple ID from App Store Connect
+        BUNDLE_ID: "com.orions.eczemacare"
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+          source: true
+    scripts:
+      - name: Set up code signing settings on Codemagic
+        script: |
+          keychain initialize
+          # Fetches distribution certificate + provisioning profile from Apple automatically
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create \
+            --platform IOS
+          keychain add-certificates
+      - name: Set Xcode project signing
+        script: |
+          xcode-project use-profiles
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+      - name: Install pods
+        script: |
+          find . -name "Podfile" -execdir pod install \;
+      - name: Flutter build ipa
+        script: |
+          flutter build ipa --release \
+            --export-options-plist=$HOME/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+    publishing:
+      email:
+        recipients:
+          - tulp@Outlook.com
+        notify:
+          success: true
+          failure: true
+      app_store_connect:
+        auth: integration  # Uses credentials from the apple_auth group
+        submit_to_testflight: true
+        beta_groups:
+          - "External Testers"  # Change to your TestFlight group name, or remove this line
