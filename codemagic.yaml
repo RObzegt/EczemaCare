@@ -23,12 +23,11 @@ workflows:
       - name: Set up code signing settings on Codemagic
         script: |
           keychain initialize
-          # Fetches distribution certificate + provisioning profile from Apple automatically
+          # Creates distribution certificate + provisioning profile and stores them in keychain
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create \
             --platform IOS
-          keychain add-certificates
       - name: Set Xcode project signing
         script: |
           xcode-project use-profiles
