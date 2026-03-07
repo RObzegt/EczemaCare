@@ -3,12 +3,12 @@ workflows:
     name: iOS Workflow
     instance_type: mac_mini_m2
     max_build_duration: 60
-    integrations:
-      app_store_connect: TriggerTrace  # Name of your integration in Codemagic Teams > Integrations
     environment:
       flutter: stable
       xcode: latest
       cocoapods: default
+      groups:
+        - apple_auth
       vars:
         APP_ID: "6760238014"
         BUNDLE_ID: "com.orions.eczemacare"
@@ -20,17 +20,13 @@ workflows:
           include: true
           source: true
     scripts:
-      - name: Set up keychain
-        script: keychain initialize
-      - name: Fetch signing files
+      - name: Set up code signing
         script: |
+          keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create
-      - name: Add certificates to keychain
-        script: keychain add-certificates
-      - name: Set Xcode project signing
-        script: xcode-project use-profiles
+          xcode-project use-profiles
       - name: Get Flutter packages
         script: flutter packages pub get
       - name: Install pods
@@ -51,5 +47,7 @@ workflows:
           success: true
           failure: true
       app_store_connect:
-        auth: integration
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
