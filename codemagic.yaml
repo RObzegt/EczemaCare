@@ -23,9 +23,13 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
+          # Generate a private key for the distribution certificate
+          openssl req -nodes -newkey rsa:2048 -keyout /tmp/cert_key.pem -out /tmp/cert_csr.pem -subj '/CN=TriggerTrace/O=JTY452RWN4'
+          # Fetch/create signing files with the explicit key
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
-            --create
+            --create \
+            --certificate-key /tmp/cert_key.pem
           keychain add-certificates
           xcode-project use-profiles --project ios/Runner.xcodeproj
       - name: Get Flutter packages
