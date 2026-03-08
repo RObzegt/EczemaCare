@@ -19,17 +19,17 @@ class GezondheidsTrackerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF0D9488), // Professional Teal (Medical/Health)
-      primary: const Color(0xFF0D9488),
-      secondary: const Color(0xFF0891B2), // Cyan accent
-      tertiary: const Color(0xFFF43F5E), // Professional Rose for warnings
+      seedColor: const Color(0xFF6B8E5A), // TriggerTrace sage green
+      primary: const Color(0xFF6B8E5A),
+      secondary: const Color(0xFF8FAF7E), // Light sage accent
+      tertiary: const Color(0xFFF43F5E), // Rose for warnings
       brightness: Brightness.light,
     );
 
     return ChangeNotifierProvider(
       create: (context) => DagboekProvider(),
       child: MaterialApp(
-        title: 'Gezondheids Tracker',
+        title: 'TriggerTrace',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: colorScheme,

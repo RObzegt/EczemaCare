@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/dagboek_provider.dart';
 import '../models/eliminatie_test.dart';
 import '../widgets/home_button.dart';
+import '../widgets/app_logo.dart';
 
 class EliminatieScreen extends StatelessWidget {
   const EliminatieScreen({super.key});
@@ -11,7 +12,7 @@ class EliminatieScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Eliminatie & Provocatie'),
+        title: const AppLogo(subtitle: 'Eliminatie'),
         actions: [
           const HomeButton(),
           IconButton(
@@ -786,7 +787,7 @@ class EliminatieScreen extends StatelessWidget {
   Widget _buildPremiumTeaser(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Eliminatie & Provocatie'),
+        title: const AppLogo(subtitle: 'Eliminatie'),
         actions: const [HomeButton()],
       ),
       body: Center(

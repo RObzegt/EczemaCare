@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/dagboek_provider.dart';
+import '../widgets/app_logo.dart';
 
 class ProfielScreen extends StatelessWidget {
   const ProfielScreen({super.key});
@@ -21,7 +22,7 @@ class ProfielScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Profiel & Instellingen'),
+        title: const AppLogo(subtitle: 'Profiel'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'analyse_screen.dart';
 import 'bewerk_screen.dart';
 import 'profiel_screen.dart';
+import '../widgets/app_logo.dart';
 
 class DagboekScreen extends StatelessWidget {
   const DagboekScreen({super.key});
@@ -14,7 +15,7 @@ class DagboekScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mijn Dagboek'),
+        title: const AppLogo(subtitle: 'Dagboek'),
         actions: [
           _SubscriptionToggle(),
           Padding(

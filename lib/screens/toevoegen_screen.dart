@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/dagboek_provider.dart';
 import '../models/voedsel_categorie.dart';
 import '../widgets/home_button.dart';
+import '../widgets/app_logo.dart';
 
 class ToevoegenScreen extends StatefulWidget {
   const ToevoegenScreen({super.key});
@@ -28,7 +29,7 @@ class _ToevoegenScreenState extends State<ToevoegenScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Data Toevoegen'),
+        title: const AppLogo(subtitle: 'Toevoegen'),
         actions: [
           const HomeButton(),
           Consumer<DagboekProvider>(

@@ -6,6 +6,7 @@ import '../models/analyse_resultaat.dart';
 import '../models/dagboek_entry.dart';
 import 'grafiek_view.dart';
 import '../widgets/home_button.dart';
+import '../widgets/app_logo.dart';
 
 class AnalyseScreen extends StatefulWidget {
   const AnalyseScreen({super.key});
@@ -21,7 +22,7 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gezondheids Analyse'),
+        title: const AppLogo(subtitle: 'Analyse'),
         actions: const [
           HomeButton(),
         ],
