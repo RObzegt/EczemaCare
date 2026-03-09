@@ -16,6 +16,8 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.orions.eczemacare
+        provisioning_profiles:
+          - "EczemaCare App Store Profile"
       vars:
         BUILD_TYPE: "release"
         BUNDLE_ID: "com.orions.eczemacare"
