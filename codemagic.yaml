@@ -51,6 +51,9 @@ workflows:
           flutter pub get
           flutter create . --platforms=ios
           
+          echo "Setting up code signing profiles..."
+          xcode-project use-profiles
+          
           echo "Building iOS with API: $APIURL"
           flutter build ipa --release --dart-define=API_URL=$APIURL
     artifacts:
