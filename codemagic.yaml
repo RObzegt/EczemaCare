@@ -72,7 +72,7 @@ workflows:
           find . -name "*.ipa"
 
     artifacts:
-      - "$FLUTTER_DIR/build/ios/ipa/*.ipa"
+      - "build/ios/ipa/*.ipa"
     publishing:
       app_store_connect:
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
