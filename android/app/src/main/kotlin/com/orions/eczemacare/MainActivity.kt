@@ -1,4 +1,4 @@
-package com.example.gezondheids_tracker
+package com.orions.eczemacare
 
 import io.flutter.embedding.android.FlutterActivity
 
