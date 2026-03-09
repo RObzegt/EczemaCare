@@ -61,9 +61,12 @@ workflows:
           
           echo "Building iOS with API: $APIURL"
           flutter build ipa --release --dart-define=API_URL=$APIURL
+          
+          echo "Finding generated IPA file..."
+          find . -name "*.ipa"
 
     artifacts:
-      - "GezondheidsTrackerFlutter/build/ios/ipa/*.ipa"
+      - "$FLUTTER_DIR/build/ios/ipa/*.ipa"
     publishing:
       app_store_connect:
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
