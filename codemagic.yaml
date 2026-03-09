@@ -15,7 +15,7 @@ workflows:
         - apiconfig
       ios_signing:
         provisioning_profiles:
-          - "EczemaCare App Store Profile"
+          - "EczemaCare ios_app_store 1772991975"
       vars:
         BUILD_TYPE: "release"
         BUNDLE_ID: "com.orions.eczemacare"
