@@ -63,7 +63,7 @@ workflows:
           flutter build ipa --release --dart-define=API_URL=$APIURL
 
     artifacts:
-      - "**/build/ios/ipa/*.ipa"
+      - "GezondheidsTrackerFlutter/build/ios/ipa/*.ipa"
     publishing:
       app_store_connect:
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
