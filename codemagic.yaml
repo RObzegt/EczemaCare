@@ -58,3 +58,8 @@ workflows:
           flutter build ipa --release --dart-define=API_URL=$APIURL
     artifacts:
       - "**/build/ios/ipa/*.ipa"
+    publishing:
+      app_store_connect:
+        auth_key: "TriggerTrace"
+        submit_to_testflight: true
+        submit_to_app_store: false
