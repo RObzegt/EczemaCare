@@ -13,9 +13,6 @@ workflows:
     environment:
       groups:
         - apiconfig
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.orions.eczemacare
       vars:
         BUILD_TYPE: "release"
         BUNDLE_ID: "com.orions.eczemacare"
