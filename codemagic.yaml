@@ -48,12 +48,6 @@ workflows:
           flutter pub get
           flutter create . --platforms=ios
           
-          echo "Setting up iOS Code Signing via App Store Connect integration..."
-          keychain initialize
-          app-store-connect fetch-signing-files "com.orions.eczemacare" --type IOS_APP_STORE --create
-          keychain add-certificates
-          xcode-project use-profiles
-          
           echo "Building iOS with API: $APIURL"
           flutter build ipa --release --dart-define=API_URL=$APIURL
     artifacts:
