@@ -60,7 +60,13 @@ workflows:
           cd ..
           
           echo "Building iOS with API: $APIURL"
-          flutter build ipa --release --dart-define=API_URL=$APIURL
+          flutter build ios --release --no-codesign --dart-define=API_URL=$APIURL
+          
+          echo "Packaging IPA securely..."
+          xcode-project build-ipa \
+            --workspace ios/Runner.xcworkspace \
+            --scheme Runner \
+            --archive-flags="-destination 'generic/platform=iOS'"
           
           echo "Finding generated IPA file..."
           find . -name "*.ipa"
