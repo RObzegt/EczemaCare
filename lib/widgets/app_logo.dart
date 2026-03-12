@@ -32,12 +32,12 @@ class AppLogo extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              const Text(
                 'TriggerTrace',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E293B),
+                  color: Color(0xFF1E293B),
                   letterSpacing: -0.5,
                 ),
               ),

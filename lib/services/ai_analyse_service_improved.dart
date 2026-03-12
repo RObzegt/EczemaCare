@@ -11,7 +11,7 @@ class AIAnalyseServiceImproved {
   // ... [Andere functies blijven hetzelfde] ...
 
   /// VERBETERDE correlatie berekening die meerdere allergenen goed handelt
-  List<Correlatie> _berekenEczeemCorrelatiesVerbeterd(List<DagboekEntry> entries) {
+  List<Correlatie> berekenEczeemCorrelatiesVerbeterd(List<DagboekEntry> entries) {
     List<Correlatie> correlaties = [];
 
     if (entries.isEmpty) return correlaties;

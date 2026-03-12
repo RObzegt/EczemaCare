@@ -54,13 +54,13 @@ class ProfielScreen extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
                             color: isSelected 
-                                ? Theme.of(context).colorScheme.primary.withOpacity(0.1) 
+                                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1) 
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isSelected 
                                   ? Theme.of(context).colorScheme.primary 
-                                  : Colors.grey.withOpacity(0.2),
+                                  : Colors.grey.withValues(alpha: 0.2),
                               width: 1.5,
                             ),
                           ),
@@ -102,7 +102,7 @@ class ProfielScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
               ),
               child: ListTile(
                 leading: const Icon(Icons.restore_rounded, color: Color(0xFF6B8E5A)),
@@ -165,7 +165,7 @@ class _ProfileHero extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -176,7 +176,7 @@ class _ProfileHero extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: const CircleAvatar(

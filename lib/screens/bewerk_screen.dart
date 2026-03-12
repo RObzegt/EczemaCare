@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../models/dagboek_entry.dart';
 import '../models/voedsel_entry.dart';
 import '../models/voedsel_categorie.dart';
@@ -101,6 +100,8 @@ class _BewerkScreenState extends State<BewerkScreen> {
       DebugHelper.printStorageData();
     });
 
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('✅ Wijzigingen opgeslagen!'),
@@ -109,9 +110,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
       ),
     );
 
-    if (mounted) {
-      Navigator.pop(context, true);
-    }
+    Navigator.pop(context, true);
   }
 
   void _setErnstig(double value) {
@@ -124,81 +123,18 @@ class _BewerkScreenState extends State<BewerkScreen> {
     });
   }
 
-  void _setMild(double value) {
-    setState(() {
-      _eczeemMild = value;
-      if (value > 0 && _eczeemErnstig >= 10) {
-        _eczeemErnstig = 9;
-      }
-      if (_eczeemMild > 0 && _geenEczeem >= 10) {
-        _geenEczeem = 9;
-      }
-    });
-  }
-
-  void _setGeenEczeem(double value) {
-    setState(() {
-      _geenEczeem = value;
-      if (value >= 10) {
-        _eczeemErnstig = 0;
-        _eczeemMild = 0;
-      }
-    });
-  }
-
-  void _deleteVoedselEntry(int index) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Verwijderen'),
-        content: const Text('Weet je zeker dat je dit voedselitem wilt verwijderen?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annuleren'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                widget.entry.voedselEntries.removeAt(index);
-              });
-              context.read<DagboekProvider>().forceSave();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('✅ Voedselitem verwijderd!'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Verwijderen', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-  void _showEditFoodDialog(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Klik op een specifiek item hieronder om het te bewerken'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
   void _showAddFoodDialog(BuildContext context) {
-
-    final beschrijvingController = TextEditingController();
     final ingredientenController = TextEditingController();
     VoedselCategorie selectedCategorie = VoedselCategorie.snack;
+    bool listenerAdded = false;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          // Listen for changes to trigger allergen re-check
-          if (!ingredientenController.hasListeners) {
+          if (!listenerAdded) {
             ingredientenController.addListener(() => setDialogState(() {}));
+            listenerAdded = true;
           }
 
           final detectedAllergens = context.read<DagboekProvider>().checkForAllergens(
@@ -213,7 +149,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                 children: [
                   if (detectedAllergens.isNotEmpty) _buildAllergenWarning(detectedAllergens),
                   DropdownButtonFormField<VoedselCategorie>(
-                  value: selectedCategorie,
+                  initialValue: selectedCategorie,
                   decoration: const InputDecoration(
                     labelText: 'Categorie',
                     border: OutlineInputBorder(),
@@ -292,17 +228,17 @@ class _BewerkScreenState extends State<BewerkScreen> {
 }
 
   void _showEditSingleFoodDialog(BuildContext context, int index, VoedselEntry currentEntry) {
-    final beschrijvingController = TextEditingController(text: currentEntry.beschrijving);
     final ingredientenController = TextEditingController(text: currentEntry.ingredienten.join(', '));
     VoedselCategorie selectedCategorie = currentEntry.categorie;
+    bool listenerAdded = false;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          // Listen for changes to trigger allergen re-check
-          if (!ingredientenController.hasListeners) {
+          if (!listenerAdded) {
             ingredientenController.addListener(() => setDialogState(() {}));
+            listenerAdded = true;
           }
 
           final detectedAllergens = context.read<DagboekProvider>().checkForAllergens(
@@ -317,7 +253,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                 children: [
                   if (detectedAllergens.isNotEmpty) _buildAllergenWarning(detectedAllergens),
                   DropdownButtonFormField<VoedselCategorie>(
-                    value: selectedCategorie,
+                    initialValue: selectedCategorie,
                     decoration: const InputDecoration(
                       labelText: 'Categorie',
                       border: OutlineInputBorder(),
@@ -478,7 +414,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                     widget.entry.dagVanWeek,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -533,7 +469,6 @@ class _BewerkScreenState extends State<BewerkScreen> {
                   // Brief food summary (Phase 3: Smaller & Detailed)
                   Consumer<DagboekProvider>(
                     builder: (context, provider, child) {
-                      final isGratis = false;
                       return Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
@@ -558,19 +493,14 @@ class _BewerkScreenState extends State<BewerkScreen> {
                                     letterSpacing: 0.5,
                                   ),
                                 ),
-                                if (isGratis) ...[
-                                  const Spacer(),
-                                  const Icon(Icons.lock_outline_rounded, size: 12, color: Colors.amber),
-                                ] else ...[
-                                  const Spacer(),
-                                  IconButton(
-                                    visualDensity: VisualDensity.compact,
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    onPressed: () => _showAddFoodDialog(context),
-                                    icon: Icon(Icons.add_circle_outline_rounded, size: 20, color: Theme.of(context).colorScheme.primary),
-                                  ),
-                                ],
+                                const Spacer(),
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () => _showAddFoodDialog(context),
+                                  icon: Icon(Icons.add_circle_outline_rounded, size: 20, color: Theme.of(context).colorScheme.primary),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 12),
@@ -594,9 +524,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                                   // Fallback: show beschrijving if no ingredients
                                   return [
                                     InkWell(
-                                      onTap: isGratis 
-                                          ? () => _showEditFoodDialog(context)
-                                          : () => _showEditSingleFoodDialog(context, index, e),
+                                      onTap: () => _showEditSingleFoodDialog(context, index, e),
                                       borderRadius: BorderRadius.circular(20),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -612,10 +540,8 @@ class _BewerkScreenState extends State<BewerkScreen> {
                                               e.beschrijving,
                                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                                             ),
-                                            if (!isGratis) ...[
-                                              const SizedBox(width: 6),
-                                              Icon(Icons.edit_rounded, size: 12, color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
-                                            ],
+                                            const SizedBox(width: 6),
+                                            Icon(Icons.edit_rounded, size: 12, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                                           ],
                                         ),
                                       ),
@@ -624,9 +550,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                                 }
                                 return e.ingredienten.map((ing) {
                                   return InkWell(
-                                    onTap: isGratis 
-                                        ? () => _showEditFoodDialog(context)
-                                        : () => _showEditSingleFoodDialog(context, index, e),
+                                    onTap: () => _showEditSingleFoodDialog(context, index, e),
                                     borderRadius: BorderRadius.circular(20),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -642,10 +566,8 @@ class _BewerkScreenState extends State<BewerkScreen> {
                                             ing,
                                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
                                           ),
-                                          if (!isGratis) ...[
-                                            const SizedBox(width: 6),
-                                            Icon(Icons.edit_rounded, size: 12, color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
-                                          ],
+                                          const SizedBox(width: 6),
+                                          Icon(Icons.edit_rounded, size: 12, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                                         ],
                                       ),
                                     ),
@@ -799,7 +721,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -816,10 +738,10 @@ class _BewerkScreenState extends State<BewerkScreen> {
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             trackHeight: 8,
-            activeTrackColor: color.withOpacity(0.7),
-            inactiveTrackColor: color.withOpacity(0.08),
+            activeTrackColor: color.withValues(alpha: 0.7),
+            inactiveTrackColor: color.withValues(alpha: 0.08),
             thumbColor: Colors.white,
-            overlayColor: color.withOpacity(0.08),
+            overlayColor: color.withValues(alpha: 0.08),
             thumbShape: const RoundSliderThumbShape(
               enabledThumbRadius: 8,
               elevation: 3,

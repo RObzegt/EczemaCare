@@ -63,18 +63,18 @@ class _ToevoegenScreenState extends State<ToevoegenScreen> {
                     color: Colors.white,
                     child: SegmentedButton<int>(
                       style: ButtonStyle(
-                        side: MaterialStateProperty.all(BorderSide.none),
-                        backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                        side: WidgetStateProperty.all(BorderSide.none),
+                        backgroundColor: WidgetStateProperty.resolveWith<Color>(
                           (states) {
-                            if (states.contains(MaterialState.selected)) {
-                              return Theme.of(context).colorScheme.primary.withOpacity(0.1);
+                            if (states.contains(WidgetState.selected)) {
+                              return Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
                             }
                             return const Color(0xFFF1F5F9);
                           },
                         ),
-                        foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                        foregroundColor: WidgetStateProperty.resolveWith<Color>(
                           (states) {
-                            if (states.contains(MaterialState.selected)) {
+                            if (states.contains(WidgetState.selected)) {
                               return Theme.of(context).colorScheme.primary;
                             }
                             return Colors.blueGrey;
@@ -230,9 +230,9 @@ class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
                     setState(() => _ingredienten.remove(allerg));
                   }
                 },
-                selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                 checkmarkColor: Theme.of(context).colorScheme.primary,
-                backgroundColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               );
             }).toList(),
           ),
@@ -288,7 +288,7 @@ class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
                           setState(() => _ingredienten.remove(ingredient));
                         },
                         deleteIcon: const Icon(Icons.close, size: 16),
-                        backgroundColor: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.7),
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.7),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       );
                     }).toList(),
@@ -352,16 +352,18 @@ class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
                 firstDate: DateTime(2020),
                 lastDate: DateTime.now(),
               );
-              if (date != null) {
-                final time = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.fromDateTime(_gekozenDatum),
-                );
-                if (time != null) {
-                  setState(() {
-                    _gekozenDatum = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                  });
-                }
+              if (!mounted) return;
+              if (date == null) return;
+              final time = await showTimePicker(
+                // ignore: use_build_context_synchronously
+                context: context,
+                initialTime: TimeOfDay.fromDateTime(_gekozenDatum),
+              );
+              if (!mounted) return;
+              if (time != null) {
+                setState(() {
+                  _gekozenDatum = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                });
               }
             },
           ),
@@ -402,6 +404,7 @@ class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
           datum: _gekozenDatum,
         );
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('✅ Voedsel toegevoegd en opgeslagen!'),
@@ -571,16 +574,18 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
               firstDate: DateTime(2020),
               lastDate: DateTime.now(),
             );
-            if (date != null) {
-              final time = await showTimePicker(
-                context: context,
-                initialTime: TimeOfDay.fromDateTime(_gekozenDatum),
-              );
-              if (time != null) {
-                setState(() {
-                  _gekozenDatum = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                });
-              }
+            if (!mounted) return;
+            if (date == null) return;
+            final time = await showTimePicker(
+              // ignore: use_build_context_synchronously
+              context: context,
+              initialTime: TimeOfDay.fromDateTime(_gekozenDatum),
+            );
+            if (!mounted) return;
+            if (time != null) {
+              setState(() {
+                _gekozenDatum = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+              });
             }
           },
         ),
@@ -591,9 +596,9 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.5)),
+              border: Border.all(color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.5)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,9 +621,9 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.1)),
+                        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)),
                       ),
                       child: Text(
                         ingredient,
@@ -653,7 +658,7 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
         const SizedBox(height: 10),
 
         // Optionele locaties
-        Text('Locatie (optioneel)', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        const Text('Locatie (optioneel)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
         const SizedBox(height: 6),
         Wrap(
           spacing: 6,
@@ -669,7 +674,7 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
         const SizedBox(height: 10),
 
         // Klachten
-        Text('Klachten', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        const Text('Klachten', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
         const SizedBox(height: 6),
         Wrap(
           spacing: 6,
@@ -706,7 +711,7 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
         const SizedBox(height: 24),
 
         // Dagelijkse checkboxes (triggers)
-        Text('Dagelijkse omgevingsfactoren', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        const Text('Dagelijkse omgevingsfactoren', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
         const SizedBox(height: 6),
         Wrap(
           spacing: 6,
@@ -739,8 +744,6 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
   }
 
   Future<void> _voegToe() async {
-    final eczeemErnstigValue = _eczeemSeverity.round().clamp(0, 10);
-
     // Collect selected details to append to notes
     final selectedLocaties = _locaties.entries.where((e) => e.value).map((e) => e.key).toList();
     final selectedKlachten = _klachten.entries.where((e) => e.value).map((e) => e.key).toList();
@@ -770,6 +773,7 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
           datum: _gekozenDatum,
         );
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('✅ Gezondheidsdata toegevoegd en opgeslagen!'),
@@ -796,126 +800,4 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
     _notitiesController.clear();
   }
 
-  String _severityLabel(double value) {
-    if (value <= 2) return 'Rustig';
-    if (value <= 4) return 'Licht';
-    if (value <= 7) return 'Matig';
-    return 'Heftig';
-  }
-
-  Color _severityColor(double value) {
-    if (value <= 2) return Colors.green;
-    if (value <= 4) return Colors.lightGreen;
-    if (value <= 7) return Colors.orange;
-    return Colors.red;
-  }
-
-  Widget _quickSeverityChip(String label, double value) {
-    final isSelected = _eczeemSeverity.round() == value.round();
-    return ChoiceChip(
-      label: Text(label, style: const TextStyle(fontSize: 11)),
-      selected: isSelected,
-      onSelected: (_) => setState(() => _eczeemSeverity = value),
-    );
-  }
-}
-
-class _SliderMetric extends StatelessWidget {
-  final String naam;
-  final double waarde;
-  final Color kleur;
-  final String minLabel;
-  final String maxLabel;
-  final ValueChanged<double> onChanged;
-
-  const _SliderMetric({
-    required this.naam,
-    required this.waarde,
-    required this.kleur,
-    required this.minLabel,
-    required this.maxLabel,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(naam, style: const TextStyle(fontSize: 14)),
-            Text(
-              waarde.round().toString(),
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: kleur),
-            ),
-          ],
-        ),
-        Slider(
-          value: waarde,
-          min: 0,
-          max: 10,
-          divisions: 10,
-          activeColor: kleur,
-          onChanged: onChanged,
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(minLabel, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-            Text(maxLabel, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _QuickMetricButtons extends StatelessWidget {
-  final String titel;
-  final int waarde;
-  final List<String> labels;
-  final bool compact;
-  final ValueChanged<int> onChanged;
-
-  const _QuickMetricButtons({
-    required this.titel,
-    required this.waarde,
-    required this.labels,
-    required this.onChanged,
-    this.compact = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final selectedIndex = (waarde / 2.5).round().clamp(0, labels.length - 1);
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(titel, style: TextStyle(fontSize: compact ? 12 : 14, fontWeight: FontWeight.w500)),
-        SizedBox(height: compact ? 4 : 8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: List.generate(labels.length, (index) {
-              final isSelected = selectedIndex == index;
-              return Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: ChoiceChip(
-                  label: Text(
-                    labels[index],
-                    style: TextStyle(fontSize: compact ? 10 : 12),
-                  ),
-                  selected: isSelected,
-                  onSelected: (_) => onChanged(index),
-                ),
-              );
-            }),
-          ),
-        ),
-      ],
-    );
-  }
 }

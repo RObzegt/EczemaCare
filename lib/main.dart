@@ -120,14 +120,14 @@ class GezondheidsTrackerApp extends StatelessWidget {
             backgroundColor: Colors.white,
             elevation: 10,
             indicatorColor: const Color(0xFFE0F2FE),
-            iconTheme: MaterialStateProperty.resolveWith((states) {
-              if (states.contains(MaterialState.selected)) {
+            iconTheme: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
                 return const IconThemeData(color: Color(0xFF0EA5E9));
               }
               return const IconThemeData(color: Color(0xFF94A3B8));
             }),
-            labelTextStyle: MaterialStateProperty.resolveWith((states) {
-              if (states.contains(MaterialState.selected)) {
+            labelTextStyle: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
                 return const TextStyle(
                   fontSize: 12, 
                   fontWeight: FontWeight.w700, 

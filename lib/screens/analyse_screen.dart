@@ -71,7 +71,7 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -161,7 +161,7 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
             color: isSelected ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             boxShadow: isSelected 
-              ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
+              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
               : null,
           ),
           child: Text(
@@ -362,7 +362,7 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
         border: Border.all(color: const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -406,7 +406,7 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -420,7 +420,7 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
               const SizedBox(width: 2),
               Text(
                 '/10', 
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color.withOpacity(0.5))
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color.withValues(alpha: 0.5))
               ),
             ],
           ),
@@ -488,7 +488,7 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: value / 10,
-              backgroundColor: color.withOpacity(0.1),
+              backgroundColor: color.withValues(alpha: 0.1),
               color: color,
               minHeight: 6,
             ),
@@ -1045,7 +1045,7 @@ class _TopCorrelatiesVisueel extends StatelessWidget {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

@@ -78,7 +78,7 @@ class EliminatieScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -99,7 +99,7 @@ class EliminatieScreen extends StatelessWidget {
           Text(
             'Spoor triggers op door specifieke allergenen tijdelijk te vermijden.',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               fontSize: 14,
             ),
           ),
@@ -132,7 +132,7 @@ class EliminatieScreen extends StatelessWidget {
           Icon(
             Icons.science_outlined,
             size: 48,
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -160,12 +160,12 @@ class EliminatieScreen extends StatelessWidget {
     
     return Card(
       elevation: isActief ? 6 : 1,
-      shadowColor: isActief ? Theme.of(context).colorScheme.primary.withOpacity(0.2) : Colors.transparent,
+      shadowColor: isActief ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) : Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: isActief 
             ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)
-            : BorderSide(color: Colors.grey.withOpacity(0.2)),
+            : BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -177,7 +177,7 @@ class EliminatieScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -239,9 +239,9 @@ class EliminatieScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
+                      border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2)),
                       ],
                     ),
                     child: Row(
@@ -325,9 +325,9 @@ class EliminatieScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.indigo.withOpacity(0.03),
+                      color: Colors.indigo.withValues(alpha: 0.03),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.indigo.withOpacity(0.1)),
+                      border: Border.all(color: Colors.indigo.withValues(alpha: 0.1)),
                     ),
                     child: _buildProvocatieProgress(
                       context, 
@@ -379,7 +379,7 @@ class EliminatieScreen extends StatelessWidget {
             ],
             
             if (!isActief) ...[
-               const SizedBox(height: 16),
+              const SizedBox(height: 16),
                Container(
                  padding: const EdgeInsets.all(12),
                  decoration: BoxDecoration(
@@ -411,7 +411,7 @@ class EliminatieScreen extends StatelessWidget {
     return Row(
       children: [
         _buildPhaseStep(context, 'ELIMINATIE', !inProvocatie, true),
-        Expanded(child: Container(height: 2, color: inProvocatie ? Colors.indigo.withOpacity(0.3) : Colors.teal.withOpacity(0.3))),
+        Expanded(child: Container(height: 2, color: inProvocatie ? Colors.indigo.withValues(alpha: 0.3) : Colors.teal.withValues(alpha: 0.3))),
         _buildPhaseStep(context, 'PROVOCATIE', inProvocatie, false),
       ],
     );
@@ -427,7 +427,7 @@ class EliminatieScreen extends StatelessWidget {
             color: isCurrent ? color : Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: color, width: 2),
-            boxShadow: isCurrent ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 8)] : null,
+            boxShadow: isCurrent ? [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8)] : null,
           ),
           child: Text(
             label,
@@ -467,7 +467,7 @@ class EliminatieScreen extends StatelessWidget {
               height: 12,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.teal.withOpacity(0.1),
+                color: Colors.teal.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
@@ -478,7 +478,7 @@ class EliminatieScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(colors: [Colors.teal[400]!, Colors.teal[600]!]),
                   borderRadius: BorderRadius.circular(6),
-                  boxShadow: [BoxShadow(color: Colors.teal.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))],
+                  boxShadow: [BoxShadow(color: Colors.teal.withValues(alpha: 0.3), blurRadius: 4, offset: const Offset(0, 2))],
                 ),
               ),
             ),
@@ -528,7 +528,7 @@ class EliminatieScreen extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 8,
-                  backgroundColor: color.withOpacity(0.1),
+                  backgroundColor: color.withValues(alpha: 0.1),
                   valueColor: AlwaysStoppedAnimation<Color>(color),
                 ),
               ),
@@ -609,7 +609,7 @@ class EliminatieScreen extends StatelessWidget {
                     runSpacing: 8,
                     children: allergenen.map((a) => ActionChip(
                       label: Text(a),
-                      backgroundColor: Colors.indigo.withOpacity(0.05),
+                      backgroundColor: Colors.indigo.withValues(alpha: 0.05),
                       onPressed: () {
                         final dagen = int.tryParse(durationController.text) ?? 5;
                         context.read<DagboekProvider>().startProvocatie(testId, a, duurDagen: dagen);
@@ -798,9 +798,9 @@ class EliminatieScreen extends StatelessWidget {
               ),
               SizedBox(height: 12),
               Text('1. **Fase 1: Eliminatie**: Vermijd het verdachte voedingsmiddel volledig (standaard 21 dagen, aanpasbaar).'),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text('2. **Fase 2: Provocatie**: Introduceer elk ingrediënt één voor één weer (standaard 5 dagen, aanpasbaar).'),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text('3. **Fase 3: Analyse**: Kijk of de symptomen terugkeren bij een specifieke provocatie.'),
               SizedBox(height: 12),
               Text(

@@ -48,6 +48,7 @@ class PurchasesService {
 
   static Future<bool> purchasePackage(Package package) async {
     try {
+      // ignore: deprecated_member_use
       PurchaseResult result = await Purchases.purchasePackage(package);
       return result.customerInfo.entitlements.all['premium']?.isActive ?? false;
     } on PlatformException catch (_) {

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/dagboek_provider.dart';
 import '../models/dagboek_entry.dart';
 import 'package:intl/intl.dart';
-import 'analyse_screen.dart';
 import 'bewerk_screen.dart';
 import 'profiel_screen.dart';
 import '../widgets/app_logo.dart';
@@ -93,11 +92,11 @@ class _DagboekScreenState extends State<DagboekScreen> {
                     ),
                   ),
                   // Title
-                  Row(
+                  const Row(
                     children: [
                       Icon(Icons.date_range_rounded, color: primary, size: 22),
-                      const SizedBox(width: 10),
-                      const Text(
+                      SizedBox(width: 10),
+                      Text(
                         'Filter op periode',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                       ),
@@ -131,7 +130,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
                           },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: primary,
-                            side: BorderSide(color: primary.withOpacity(0.3)),
+                            side: BorderSide(color: primary.withValues(alpha: 0.3)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
@@ -182,9 +181,9 @@ class _DagboekScreenState extends State<DagboekScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: primary.withOpacity(0.05),
+          color: primary.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: primary.withOpacity(0.15)),
+          border: Border.all(color: primary.withValues(alpha: 0.15)),
         ),
         child: Row(
           children: [
@@ -230,7 +229,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
   }
 
   Widget _buildFilterBar() {
-    final primary = const Color(0xFF2E7D6F);
+    const primary = Color(0xFF2E7D6F);
 
     String aangepastLabel = 'Periode';
     if (_actieveFilter == DatumFilter.aangepast && _aangepastBereik != null) {
@@ -248,7 +247,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.filter_list_rounded, size: 18, color: primary),
+          const Icon(Icons.filter_list_rounded, size: 18, color: primary),
           const SizedBox(width: 8),
           Expanded(
             child: SingleChildScrollView(
@@ -284,10 +283,10 @@ class _DagboekScreenState extends State<DagboekScreen> {
           duration: const Duration(milliseconds: 200),
           padding: EdgeInsets.symmetric(horizontal: icon != null ? 10 : 14, vertical: 7),
           decoration: BoxDecoration(
-            color: isActief ? primary : primary.withOpacity(0.06),
+            color: isActief ? primary : primary.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isActief ? primary : primary.withOpacity(0.2),
+              color: isActief ? primary : primary.withValues(alpha: 0.2),
               width: 1.5,
             ),
           ),
@@ -344,7 +343,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.medical_services_outlined, size: 72, color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+                  Icon(Icons.medical_services_outlined, size: 72, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
                   Text(
                     'Geen medische logs gevonden',
@@ -353,7 +352,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Begin met het toevoegen van je eerste entry',
-                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.outline.withOpacity(0.7)),
+                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.7)),
                   ),
                 ],
               ),
@@ -375,14 +374,12 @@ class _DagboekScreenState extends State<DagboekScreen> {
 
           // Geen filters meer nodig voor abonnementen, gebruik direct de datums
           final List<DateTime> gefilterdeDatums = _filterDatums(entryDatums);
-          bool heeftVerborgenEntries = false;
-
           if (gefilterdeDatums.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.lock_clock_rounded, size: 72, color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+                  Icon(Icons.lock_clock_rounded, size: 72, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
                   Text(
                     'Geen recente logs gevonden',
@@ -408,7 +405,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.search_off_rounded, size: 56, color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+                          Icon(Icons.search_off_rounded, size: 56, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
                           const SizedBox(height: 12),
                           Text(
                             'Geen gegevens in deze periode',
@@ -438,7 +435,6 @@ class _DagboekScreenState extends State<DagboekScreen> {
                             _buildDayHeader(context, firstEntry),
                             const SizedBox(height: 8),
                             ...dayEntries.asMap().entries.map((entryMap) {
-                              final index = entryMap.key;
                               final entry = entryMap.value;
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
@@ -453,7 +449,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
                                   },
                                 ),
                               );
-                            }).toList(),
+                            }),
                             const SizedBox(height: 12),
                           ],
                         );
@@ -473,8 +469,8 @@ class _DagboekScreenState extends State<DagboekScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.15),
-            Theme.of(context).colorScheme.primary.withOpacity(0.02),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.02),
           ],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
@@ -582,98 +578,6 @@ class _DagboekRijCardState extends State<DagboekRijCard> {
     return 5;
   }
 
-  void _showEditDialog() {
-    int tempEczeem = eczeemErnstig;
-    int tempJeuken = eczeemJeuken;
-    int tempEnergie = eczeemMild;
-    int tempStress = geenEczeem;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Gezondheid bijwerken'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildSliderRowDialog(
-                  'Eczeem Ernst',
-                  tempEczeem,
-                  (val) {
-                    setDialogState(() => tempEczeem = val.toInt());
-                  },
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: Text('Symptomen', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[600])),
-                ),
-                const SizedBox(height: 8),
-                _buildSliderRowDialog(
-                  'Jeuk',
-                  tempJeuken,
-                  (val) {
-                    setDialogState(() => tempJeuken = val.toInt());
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuleren'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Update provider - no need to update state since we read fresh values
-                widget.provider.voegGezondheidsMetricToe(
-                  eczeemErnstig: tempEczeem,
-                  eczeemJeuken: tempJeuken,
-                  eczeemMild: tempEnergie,
-                  slaapKwaliteit: 5,
-                  geenEczeem: tempStress,
-                  roodheid: 0,
-                  droogheid: 0,
-                  schilfering: 0,
-                  medicatieGebruikt: false,
-                  datum: widget.entry.datum,
-                );
-                Navigator.pop(context);
-                // Widget will rebuild automatically and show fresh values
-              },
-              child: const Text('Opslaan'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSliderRowDialog(String label, int value, Function(double) onChanged) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: const TextStyle(fontSize: 13)),
-            Text('$value/10', style: const TextStyle(fontWeight: FontWeight.bold)),
-          ],
-        ),
-        Slider(
-          value: value.toDouble(),
-          min: 0,
-          max: 10,
-          divisions: 10,
-          label: '$value',
-          onChanged: onChanged,
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     Color statusColor = eczeemErnstig > 7 
@@ -686,7 +590,7 @@ class _DagboekRijCardState extends State<DagboekRijCard> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: statusColor.withOpacity(0.08),
+            color: statusColor.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -701,7 +605,7 @@ class _DagboekRijCardState extends State<DagboekRijCard> {
               // Status Color Indicator Bar (Medical look)
               Container(
                 width: 6,
-                color: statusColor.withOpacity(0.8),
+                color: statusColor.withValues(alpha: 0.8),
               ),
               Expanded(
                 child: InkWell(
@@ -763,9 +667,9 @@ class _DagboekRijCardState extends State<DagboekRijCard> {
                                 .map((e) => Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
                                         borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.1)),
+                                        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -904,16 +808,16 @@ class _DagboekRijCardState extends State<DagboekRijCard> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.2), width: 1.5),
+          border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
         ),
         child: Column(
           children: [
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 14, color: color),
@@ -932,7 +836,7 @@ class _DagboekRijCardState extends State<DagboekRijCard> {
               style: TextStyle(
                 fontSize: 8,
                 fontWeight: FontWeight.w800,
-                color: color.withOpacity(0.7),
+                color: color.withValues(alpha: 0.7),
                 letterSpacing: 0.5,
               ),
             ),

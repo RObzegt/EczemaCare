@@ -20,8 +20,6 @@ class DagboekProvider extends ChangeNotifier {
   AnalyseResultaat? _huidigAnalyseResultaat;
   bool _isAnalyseBezig = false;
   SubscriptionLevel _subscriptionLevel = SubscriptionLevel.gratis;
-  bool _isGeinitialiseerd = false;
-
   final AIAnalyseService _analyseService = AIAnalyseService();
   static const String _storageKey = 'dagboek_entries';
   static const String _testStorageKey = 'eliminatie_tests';
@@ -154,7 +152,6 @@ class DagboekProvider extends ChangeNotifier {
       }
     }
     
-    _isGeinitialiseerd = true;
     notifyListeners();
     debugPrint('=== END LOADING DATA ===');
   }
