@@ -138,7 +138,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                       )
                     else
                       const Text(
-                        'Abonnementen laden mislukt. Controleer je connectie.',
+                        'Abonnementen laden mislukt (Geen connectie). Controleer je internetverbinding.',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.red),
                       ),
@@ -150,6 +150,22 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         style: TextStyle(
                           color: Color(0xFF6B8E5A),
                           fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(builder: (_) => const HomeScreen()),
+                        );
+                      },
+                      child: const Text(
+                        'Doorgaan zonder abonnement',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF94A3B8),
+                          decoration: TextDecoration.underline,
                         ),
                       ),
                     ),
