@@ -424,15 +424,10 @@ class _DagboekScreenState extends State<DagboekScreen> {
                       ),
                     )
                   : ListView.builder(
-                      itemCount: sortedDates.length + (heeftVerborgenEntries ? 1 : 0),
+                      itemCount: sortedDates.length,
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
                       itemBuilder: (context, index) {
-                        if (heeftVerborgenEntries && index == 0) {
-                          return _buildRestrictionCard(context);
-                        }
-
-                        final dayIndex = heeftVerborgenEntries ? index - 1 : index;
-                        final dateStr = sortedDates[dayIndex];
+                        final dateStr = sortedDates[index];
                         final dayEntries = groupedEntries[dateStr]!;
                         final firstEntry = dayEntries.first;
 
