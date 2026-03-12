@@ -4,6 +4,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/dagboek_provider.dart';
 import 'screens/home_screen.dart';
+import 'screens/paywall_screen.dart';
+import 'services/purchases_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,11 +13,16 @@ void main() async {
   // Initialiseer Nederlandse locale voor datums
   await initializeDateFormatting('nl_NL', null);
   
-  runApp(const GezondheidsTrackerApp());
+  // Initialiseer RevenueCat
+  await PurchasesService.init();
+  final bool hasSubscription = await PurchasesService.hasActiveSubscription();
+  
+  runApp(GezondheidsTrackerApp(hasSubscription: hasSubscription));
 }
 
 class GezondheidsTrackerApp extends StatelessWidget {
-  const GezondheidsTrackerApp({super.key});
+  final bool hasSubscription;
+  const GezondheidsTrackerApp({super.key, required this.hasSubscription});
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +142,7 @@ class GezondheidsTrackerApp extends StatelessWidget {
             }),
           ),
         ),
-        home: const HomeScreen(),
+        home: hasSubscription ? const HomeScreen() : const PaywallScreen(),
       ),
     );
   }

@@ -319,7 +319,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
       appBar: AppBar(
         title: const AppLogo(subtitle: 'Dagboek'),
         actions: [
-          _SubscriptionToggle(),
+
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: IconButton(
@@ -373,21 +373,11 @@ class _DagboekScreenState extends State<DagboekScreen> {
           final entryDatums = provider.dagboekEntries.map((e) => e.datum).toSet().toList();
           entryDatums.sort((a, b) => b.compareTo(a));
 
-          // Filters for Basis sub: only last 7 days
-          List<DateTime> basisGefilterd = entryDatums;
+          // Geen filters meer nodig voor abonnementen, gebruik direct de datums
+          final List<DateTime> gefilterdeDatums = _filterDatums(entryDatums);
           bool heeftVerborgenEntries = false;
-          
-          if (provider.isBasis) {
-            final nu = DateTime.now();
-            final grens = DateTime(nu.year, nu.month, nu.day).subtract(const Duration(days: 7));
-            basisGefilterd = entryDatums.where((d) => d.isAfter(grens) || d.isAtSameMomentAs(grens)).toList();
-            heeftVerborgenEntries = entryDatums.length > basisGefilterd.length;
-          }
 
-          // Apply the user's date filter on top of subscription filter
-          final List<DateTime> gefilterdeDatums = _filterDatums(basisGefilterd);
-
-          if (basisGefilterd.isEmpty) {
+          if (gefilterdeDatums.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -399,17 +389,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.outline),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Met het Basis abonnement zie je de laatste 7 dagen.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.outline.withOpacity(0.7)),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Kies Premium voor onbeperkt inzicht.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.outline.withOpacity(0.7)),
-                  ),
+
                 ],
               ),
             );
@@ -533,36 +513,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
     );
   }
 
-  Widget _buildRestrictionCard(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(top: 8, bottom: 24),
-      color: Colors.amber.shade50,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.amber.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Icon(Icons.lock_clock_rounded, color: Colors.amber.shade800),
-            const SizedBox(height: 8),
-            const Text(
-              'Oudere resultaten zijn verborgen',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Met het Basis abonnement zie je de laatste 7 dagen. Kies Premium voor onbeperkt inzicht.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Colors.amber.shade900),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   void _confirmDelete(BuildContext context, DagboekProvider provider, int index) {
     showDialog(
@@ -993,50 +944,6 @@ class _DagboekRijCardState extends State<DagboekRijCard> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _SubscriptionToggle extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<DagboekProvider>(
-      builder: (context, provider, child) {
-        String label = 'GRATIS';
-        Color color = Colors.grey;
-        if (provider.isBasis) {
-          label = 'BASIS';
-          color = Colors.blue;
-        } else if (provider.isPremium) {
-          label = 'PREMIUM';
-          color = Colors.teal;
-        }
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-          child: InkWell(
-            onTap: () => provider.rotateSubscriptionLevel(),
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: color, width: 1.5),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  color: color,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }

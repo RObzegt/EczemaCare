@@ -102,9 +102,9 @@ class DagboekProvider extends ChangeNotifier {
   SubscriptionLevel get subscriptionLevel => _subscriptionLevel;
   List<String> get userAllergens => _userAllergens;
   
-  bool get isGratis => _subscriptionLevel == SubscriptionLevel.gratis;
-  bool get isBasis => _subscriptionLevel == SubscriptionLevel.basis;
-  bool get isPremium => _subscriptionLevel == SubscriptionLevel.premium;
+  bool get isGratis => false;
+  bool get isBasis => false;
+  bool get isPremium => true;
   
   // Actieve test helper
   EliminatieTest? get actieveTest => _eliminatieTests.isNotEmpty && _eliminatieTests.any((t) => t.isActief) 

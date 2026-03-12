@@ -1,0 +1,194 @@
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import '../services/purchases_service.dart';
+import '../widgets/app_logo.dart';
+import 'home_screen.dart';
+
+class PaywallScreen extends StatefulWidget {
+  const PaywallScreen({super.key});
+
+  @override
+  State<PaywallScreen> createState() => _PaywallScreenState();
+}
+
+class _PaywallScreenState extends State<PaywallScreen> {
+  bool _isLoading = true;
+  List<Package> _packages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchOffers();
+  }
+
+  Future<void> _fetchOffers() async {
+    final packages = await PurchasesService.getOfferings();
+    setState(() {
+      _packages = packages;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _makePurchase(Package package) async {
+    setState(() => _isLoading = true);
+    final isSuccess = await PurchasesService.purchasePackage(package);
+    if (isSuccess && mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } else {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Aankoop mislukt of geannuleerd.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _restorePurchases() async {
+    setState(() => _isLoading = true);
+    final isSuccess = await PurchasesService.restorePurchases();
+    if (isSuccess && mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } else {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Geen actief abonnement gevonden om te herstellen.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const AppLogo(),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Spacer(),
+                    const Icon(
+                      Icons.health_and_safety_outlined,
+                      size: 80,
+                      color: Color(0xFF6B8E5A),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Ontgrendel Je Volledige Gezondheidsdagboek',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Krijg onbeperkt inzicht in je leefstijl, voeding en patronen. Start nu zorgeloos met een gratis proefperiode.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF64748B),
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    if (_packages.isNotEmpty)
+                      ElevatedButton(
+                        onPressed: () => _makePurchase(_packages.first),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: const Color(0xFF6B8E5A),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text(
+                          'Start 7 Dagen Gratis, daarna €5,99/mnd',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      )
+                    else
+                      const Text(
+                        'Abonnementen laden mislukt. Controleer je connectie.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: _restorePurchases,
+                      child: const Text(
+                        'Aankopen Herstellen',
+                        style: TextStyle(
+                          color: Color(0xFF6B8E5A),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    const Text(
+                      'Een betaling wordt in rekening gebracht op je Apple ID-account bij de bevestiging van de aankoop. Abonnementen worden automatisch verlengd tenzij dit ten minste 24 uur voor het einde van de lopende periode wordt geannuleerd. Je kunt je abonnement op elk moment beheren in je App Store account instellingen.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF94A3B8),
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: () => _launchUrl('https://JOUW_WEBSITE.com/privacy'), // TODO: Vervang met echte url
+                          child: const Text(
+                            'Privacy Policy',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          ),
+                        ),
+                        const Text('|', style: TextStyle(color: Color(0xFF94A3B8))),
+                        TextButton(
+                          onPressed: () => _launchUrl('https://JOUW_WEBSITE.com/terms'), // TODO: Vervang met echte url of standaard Apple EULA link
+                          child: const Text(
+                            'Terms of Use',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+}

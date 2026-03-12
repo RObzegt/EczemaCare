@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/dagboek_provider.dart';
 import '../widgets/app_logo.dart';
+import '../services/purchases_service.dart';
 
 class ProfielScreen extends StatelessWidget {
   const ProfielScreen({super.key});
@@ -90,6 +91,32 @@ class ProfielScreen extends StatelessWidget {
                       );
                     }).toList(),
                   );
+                },
+              ),
+            ),
+            const SizedBox(height: 32),
+            _buildSectionHeader(context, 'Abonnement', 'Beheer je aankopen'),
+            const SizedBox(height: 8),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              ),
+              child: ListTile(
+                leading: const Icon(Icons.restore_rounded, color: Color(0xFF6B8E5A)),
+                title: const Text('Aankopen Herstellen', style: TextStyle(fontWeight: FontWeight.w600)),
+                trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+                onTap: () async {
+                   final scaffold = ScaffoldMessenger.of(context);
+                   scaffold.showSnackBar(const SnackBar(content: Text('Aankopen herstellen...')));
+                   final isSuccess = await PurchasesService.restorePurchases();
+                   if (isSuccess) {
+                     scaffold.showSnackBar(const SnackBar(content: Text('Aankopen succesvol hersteld!')));
+                   } else {
+                     scaffold.showSnackBar(const SnackBar(content: Text('Geen actief abonnement gevonden om te herstellen.')));
+                   }
                 },
               ),
             ),

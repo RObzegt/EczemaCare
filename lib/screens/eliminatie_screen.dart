@@ -23,9 +23,7 @@ class EliminatieScreen extends StatelessWidget {
       ),
       body: Consumer<DagboekProvider>(
         builder: (context, provider, child) {
-          if (!provider.isPremium) {
-            return _buildPremiumTeaser(context);
-          }
+
 
           final tests = provider.eliminatieTests;
           final actieveTest = provider.actieveTest;
@@ -779,67 +777,19 @@ class EliminatieScreen extends StatelessWidget {
               ),
             ],
           );
-        },
-      ),
-    );
-  }
-
-  Widget _buildPremiumTeaser(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const AppLogo(subtitle: 'Eliminatie'),
-        actions: const [HomeButton()],
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.indigo.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.science_rounded, size: 80, color: Colors.indigo),
-              ),
-              const SizedBox(height: 32),
-              const Text(
-                'Premium Functie',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Neem Premium voor volledige eliminatie en provocatie test mogelijkheden.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.blueGrey, height: 1.5),
-              ),
-              const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    context.read<DagboekProvider>().setSubscriptionLevel(SubscriptionLevel.premium);
-                  },
+                      Navigator.pop(context);
+                    },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Upgrade naar Premium', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text('Starten'),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Of kies voor Basis voor 7 dagen dagboek historie.',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-        ),
-      ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

@@ -37,7 +37,7 @@ class _ToevoegenScreenState extends State<ToevoegenScreen> {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ElevatedButton(
-                  onPressed: provider.isGratis ? null : _opslaanHandler,
+                  onPressed: _opslaanHandler,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     backgroundColor: Theme.of(context).colorScheme.primary,
@@ -104,65 +104,7 @@ class _ToevoegenScreenState extends State<ToevoegenScreen> {
                   ),
                 ],
               ),
-              if (provider.isGratis)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black.withOpacity(0.05),
-                    child: Center(
-                      child: Card(
-                        margin: const EdgeInsets.all(32),
-                        elevation: 8,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.lock_outline_rounded, size: 48, color: Colors.orange),
-                              ),
-                              const SizedBox(height: 24),
-                              const Text(
-                                'Gratis Versie',
-                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'In de gratis versie kun je alleen testdata bekijken. Wil je zelf data toevoegen?',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.blueGrey),
-                              ),
-                              const SizedBox(height: 24),
-                              ElevatedButton(
-                                onPressed: () {
-                                  provider.setSubscriptionLevel(SubscriptionLevel.basis);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                child: const Text('Upgrade naar Basis'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  provider.setSubscriptionLevel(SubscriptionLevel.premium);
-                                },
-                                child: const Text('Direct naar Premium'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+
             ],
           );
         },

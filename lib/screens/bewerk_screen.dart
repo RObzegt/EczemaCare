@@ -178,39 +178,15 @@ class _BewerkScreenState extends State<BewerkScreen> {
     );
   }
   void _showEditFoodDialog(BuildContext context) {
-    if (context.read<DagboekProvider>().subscriptionLevel == SubscriptionLevel.gratis) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Upgrade naar Basis'),
-          content: const Text('Met een Basis of Premium abonnement kun je geregistreerde voeding bewerken en verfijnen.'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Later')),
-            ElevatedButton(
-              onPressed: () {
-                context.read<DagboekProvider>().setSubscriptionLevel(SubscriptionLevel.basis);
-                Navigator.pop(context);
-              }, 
-              child: const Text('Upgrade Nu')
-            ),
-          ],
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Klik op een specifiek item hieronder om het te bewerken'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Klik op een specifiek item hieronder om het te bewerken'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   void _showAddFoodDialog(BuildContext context) {
-    if (context.read<DagboekProvider>().subscriptionLevel == SubscriptionLevel.gratis) {
-      _showEditFoodDialog(context); // Shows upgrade dialog
-      return;
-    }
 
     final beschrijvingController = TextEditingController();
     final ingredientenController = TextEditingController();
@@ -511,38 +487,31 @@ class _BewerkScreenState extends State<BewerkScreen> {
             const SizedBox(height: 8),
 
             // Info message
-            Consumer<DagboekProvider>(
-              builder: (context, provider, child) {
-                final canEdit = provider.subscriptionLevel != SubscriptionLevel.gratis;
-                return Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: canEdit ? const Color(0xFFF0FDFA) : const Color(0xFFFFF7ED),
-                    border: Border.all(color: canEdit ? const Color(0xFFCCFBF1) : const Color(0xFFFDE68A)),
-                    borderRadius: BorderRadius.circular(6),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDFA),
+                border: Border.all(color: const Color(0xFFCCFBF1)),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.edit_note_rounded, 
+                    color: Colors.teal.shade700
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        canEdit ? Icons.edit_note_rounded : Icons.info_outline, 
-                        color: canEdit ? Colors.teal.shade700 : Colors.amber.shade700
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Je kunt hier zowel gezondheidsdata als voedselitems aanpassen (Klik op een item).',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.teal.shade900,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          canEdit 
-                              ? 'Je kunt hier zowel gezondheidsdata als voedselitems aanpassen (Klik op een item).' 
-                              : 'Je kunt hier de gezondheidsdata aanpassen. Upgrade naar Basis voor volledige voedsel-bewerking.',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: canEdit ? Colors.teal.shade900 : Colors.amber.shade900,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
             const SizedBox(height: 8),
 
@@ -564,7 +533,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                   // Brief food summary (Phase 3: Smaller & Detailed)
                   Consumer<DagboekProvider>(
                     builder: (context, provider, child) {
-                      final isGratis = provider.subscriptionLevel == SubscriptionLevel.gratis;
+                      final isGratis = false;
                       return Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
