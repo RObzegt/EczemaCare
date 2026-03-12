@@ -777,19 +777,8 @@ class EliminatieScreen extends StatelessWidget {
               ),
             ],
           );
-                      Navigator.pop(context);
-                    },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Starten'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+        },
+      ),
     );
   }
 
