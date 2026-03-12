@@ -168,7 +168,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         TextButton(
-                          onPressed: () => _launchUrl('https://JOUW_WEBSITE.com/privacy'), // TODO: Vervang met echte url
+                          onPressed: () => _launchUrl('https://robzegt.github.io/EczemaCare/Privacy.html'),
                           child: const Text(
                             'Privacy Policy',
                             style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
@@ -176,7 +176,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         ),
                         const Text('|', style: TextStyle(color: Color(0xFF94A3B8))),
                         TextButton(
-                          onPressed: () => _launchUrl('https://JOUW_WEBSITE.com/terms'), // TODO: Vervang met echte url of standaard Apple EULA link
+                          onPressed: () => _launchUrl('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'),
                           child: const Text(
                             'Terms of Use',
                             style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
