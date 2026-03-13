@@ -32,7 +32,7 @@ class PurchasesService {
     if (!_isSupported) return false;
     try {
       CustomerInfo customerInfo = await Purchases.getCustomerInfo();
-      return customerInfo.entitlements.all['premium']?.isActive ?? false;
+      return customerInfo.entitlements.all['Triggertrace Pro']?.isActive ?? false;
     } on PlatformException catch (_) {
       return false;
     }
@@ -56,7 +56,7 @@ class PurchasesService {
     try {
       // ignore: deprecated_member_use
       PurchaseResult result = await Purchases.purchasePackage(package);
-      return result.customerInfo.entitlements.all['premium']?.isActive ?? false;
+      return result.customerInfo.entitlements.all['Triggertrace Pro']?.isActive ?? false;
     } on PlatformException catch (_) {
       return false;
     }
@@ -66,7 +66,7 @@ class PurchasesService {
     if (!_isSupported) return false;
     try {
       CustomerInfo customerInfo = await Purchases.restorePurchases();
-      return customerInfo.entitlements.all['premium']?.isActive ?? false;
+      return customerInfo.entitlements.all['Triggertrace Pro']?.isActive ?? false;
     } on PlatformException catch (_) {
       return false;
     }
