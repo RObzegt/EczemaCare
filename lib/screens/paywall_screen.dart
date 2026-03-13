@@ -84,13 +84,12 @@ class _PaywallScreenState extends State<PaywallScreen> {
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            : SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Spacer(),
+                    const SizedBox(height: 40),
                     const Icon(
                       Icons.health_and_safety_outlined,
                       size: 80,
@@ -153,23 +152,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (_) => const HomeScreen()),
-                        );
-                      },
-                      child: const Text(
-                        'Doorgaan zonder abonnement',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF94A3B8),
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
+                    const SizedBox(height: 40),
                     const Text(
                       'Een betaling wordt in rekening gebracht op je Apple ID-account bij de bevestiging van de aankoop. Abonnementen worden automatisch verlengd tenzij dit ten minste 24 uur voor het einde van de lopende periode wordt geannuleerd. Je kunt je abonnement op elk moment beheren in je App Store account instellingen.',
                       textAlign: TextAlign.center,
