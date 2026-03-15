@@ -115,7 +115,45 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         height: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 32),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: const Column(
+                        children: [
+                          Text(
+                            'TriggerTrace Premium',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Maandelijks abonnement',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            '7 dagen gratis proefperiode, daarna €5,99/maand',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF6B8E5A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                     if (_packages.isNotEmpty)
                       ElevatedButton(
                         onPressed: () => _makePurchase(_packages.first),
@@ -127,7 +165,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                           ),
                         ),
                         child: const Text(
-                          'Start 7 Dagen Gratis, daarna €5,99/mnd',
+                          'Start 7 Dagen Gratis',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -136,10 +174,23 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         ),
                       )
                     else
-                      const Text(
-                        'Abonnementen laden mislukt (Geen connectie). Controleer je internetverbinding.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.red),
+                      ElevatedButton(
+                        onPressed: _fetchOffers,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: const Color(0xFF6B8E5A),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text(
+                          'Opnieuw proberen',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     const SizedBox(height: 16),
                     TextButton(
@@ -152,9 +203,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 32),
                     const Text(
-                      'Een betaling wordt in rekening gebracht op je Apple ID-account bij de bevestiging van de aankoop. Abonnementen worden automatisch verlengd tenzij dit ten minste 24 uur voor het einde van de lopende periode wordt geannuleerd. Je kunt je abonnement op elk moment beheren in je App Store account instellingen.',
+                      'Een betaling wordt in rekening gebracht op je Apple ID-account bij de bevestiging van de aankoop. Het abonnement wordt automatisch verlengd tenzij dit ten minste 24 uur voor het einde van de lopende periode wordt geannuleerd. Je kunt je abonnement op elk moment beheren in je Apple ID-instellingen.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 12,
