@@ -1,7 +1,7 @@
 name: gezondheids_tracker
 description: Track food intake and health symptoms with AI pattern detection. Monitor eczema, energy, and stress levels daily.
 publish_to: 'none'
-version: 2.0.0+8
+version: 2.1.0+8
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
