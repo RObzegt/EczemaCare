@@ -306,7 +306,7 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text(bron.instantie, style: TextStyle(fontSize: 12, color: Theme.of(context).primaryColor, fontWeight: FontWeight.w600)),
+            Text(bron.instantie, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
             Text(bron.beschrijving, style: TextStyle(fontSize: 12, color: Colors.grey[600], height: 1.4)),
           ],

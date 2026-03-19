@@ -17,12 +17,12 @@ void main() async {
   await PurchasesService.init();
   final bool hasSubscription = await PurchasesService.hasActiveSubscription();
   
-  runApp(GezondheidsTrackerApp(hasSubscription: hasSubscription));
+  runApp(TriggerTraceApp(hasSubscription: hasSubscription));
 }
 
-class GezondheidsTrackerApp extends StatelessWidget {
+class TriggerTraceApp extends StatelessWidget {
   final bool hasSubscription;
-  const GezondheidsTrackerApp({super.key, required this.hasSubscription});
+  const TriggerTraceApp({super.key, required this.hasSubscription});
 
   @override
   Widget build(BuildContext context) {

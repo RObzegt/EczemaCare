@@ -4,7 +4,6 @@ import '../models/dagboek_entry.dart';
 import '../models/voedsel_entry.dart';
 import '../models/voedsel_categorie.dart';
 import '../providers/dagboek_provider.dart';
-import '../debug_helper.dart';
 import '../widgets/home_button.dart';
 
 class BewerkScreen extends StatefulWidget {
@@ -94,11 +93,6 @@ class _BewerkScreenState extends State<BewerkScreen> {
       final m = updatedEntry.gezondheidsMetrics.first;
       debugPrint('✅ NA OPSLAAN: Ernstig=${m.eczeemErnstig}, Mild=${m.eczeemMild}, Geen=${m.geenEczeem}, Slaap=${m.slaapKwaliteit}');
     }
-
-    // Debug: Check what was actually saved
-    Future.delayed(const Duration(milliseconds: 200), () {
-      DebugHelper.printStorageData();
-    });
 
     if (!mounted) return;
 

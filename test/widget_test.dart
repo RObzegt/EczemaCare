@@ -5,7 +5,7 @@ import 'package:gezondheids_tracker/main.dart';
 
 void main() {
   testWidgets('App starts smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(const GezondheidsTrackerApp(hasSubscription: true));
+    await tester.pumpWidget(const TriggerTraceApp(hasSubscription: true));
 
     expect(find.byType(MaterialApp), findsOneWidget);
   });
