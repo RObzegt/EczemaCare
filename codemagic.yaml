@@ -1,13 +1,7 @@
-# Codemagic CI/CD for Gezondheids Tracker - iOS
-# Group "apiconfig" in Codemagic > Environment variables
-# Variable: APIURL = https://eczemacare.onrender.com
-#
-# For code signing: add "ios_credentials" group with distribution cert + provisioning profile
-
+# Codemagic CI/CD for TriggerTrace - iOS
 workflows:
   ios-release:
     name: iOS Release
-    working_directory: .  # Use GezondheidsTrackerFlutter if app is in subfolder
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
@@ -18,60 +12,30 @@ workflows:
         provisioning_profiles:
           - "EczemaCare ios_app_store 1772991975"
       vars:
-        BUILD_TYPE: "release"
         BUNDLE_ID: "com.orions.eczemacare"
       xcode: latest
       cocoapods: default
     scripts:
-      - name: Build iOS
+      - name: Install dependencies
         script: |
-          # Find Flutter app (must have pubspec.yaml AND lib/main.dart)
-          find_flutter_app() {
-            for dir in . GezondheidsTrackerFlutter EczemaCare app mobile flutter_app; do
-              if [ -f "$dir/pubspec.yaml" ] && [ -f "$dir/lib/main.dart" ]; then
-                echo "$dir"
-                return
-              fi
-            done
-            PROJ=$(find . -path "*/lib/main.dart" -maxdepth 5 2>/dev/null | head -1)
-            if [ -n "$PROJ" ]; then
-              dirname "$(dirname "$PROJ")"
-              return
-            fi
-            echo ""
-          }
-          FLUTTER_DIR=$(find_flutter_app)
-          if [ -z "$FLUTTER_DIR" ]; then
-            echo "ERROR: No Flutter app (pubspec.yaml + lib/main.dart) found. Repo contents:"
-            ls -la
-            find . -name "pubspec.yaml" -o -name "main.dart" 2>/dev/null | head -20
-            exit 1
-          fi
-          cd "$FLUTTER_DIR"
-          echo "Using Flutter app at: $FLUTTER_DIR"
           flutter pub get
-          flutter create . --platforms=ios
-          
-          echo "Setting up code signing profiles..."
+      - name: Set up code signing
+        script: |
           xcode-project use-profiles
-          
-          echo "Auto-incrementing build number for TestFlight/App Store..."
+      - name: Auto-increment build number
+        script: |
           cd ios
           agvtool new-version -all $BUILD_ID
           cd ..
-          
-          echo "Building iOS with API: $APIURL"
-          flutter build ios --release --no-codesign --dart-define=API_URL=$APIURL
-          
-          echo "Packaging IPA securely..."
+      - name: Build iOS
+        script: |
+          flutter build ios --release --no-codesign
+      - name: Package IPA
+        script: |
           xcode-project build-ipa \
             --workspace ios/Runner.xcworkspace \
             --scheme Runner \
             --archive-flags="-destination 'generic/platform=iOS'"
-          
-          echo "Finding generated IPA file..."
-          find . -name "*.ipa"
-
     artifacts:
       - "build/ios/ipa/*.ipa"
     publishing:
