@@ -101,70 +101,92 @@ class _PaywallScreenState extends State<PaywallScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
               const Icon(
                 Icons.health_and_safety_outlined,
-                size: 80,
+                size: 64,
                 color: Color(0xFF6B8E5A),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               const Text(
                 'Ontgrendel Je Volledige Gezondheidsdagboek',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1E293B),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               const Text(
-                'Krijg onbeperkt inzicht in je leefstijl, voeding en patronen. Start nu zorgeloos met een gratis proefperiode.',
+                'Krijg onbeperkt inzicht in je leefstijl, voeding en patronen.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 15,
                   color: Color(0xFF64748B),
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
+
+              // ── PRICE BOX ──────────────────────────────────────────────
+              // Apple guideline: billed amount must be the most clear
+              // and conspicuous pricing element.
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: const Color(0xFFF0F4ED),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(
+                    color: const Color(0xFF6B8E5A),
+                    width: 1.5,
+                  ),
                 ),
-                child: const Column(
-                  children: [
+                child: Column(
+                  children: const [
+                    // PRIMARY: billed amount — largest, most prominent element
                     Text(
-                      'TriggerTrace Premium',
+                      '€5,99',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 52,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF1E293B),
+                        height: 1.0,
+                      ),
+                    ),
+                    Text(
+                      'per maand',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                         color: Color(0xFF1E293B),
                       ),
                     ),
-                    SizedBox(height: 8),
+                    SizedBox(height: 12),
+                    // SUBORDINATE: free trial notice — smaller, lighter
                     Text(
-                      'Maandelijks abonnement',
+                      'inclusief 7 dagen gratis proefperiode',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: Color(0xFF64748B),
                       ),
                     ),
-                    SizedBox(height: 4),
                     Text(
-                      '7 dagen gratis proefperiode, daarna €5,99/maand',
+                      'Daarna automatisch verlengd tenzij je opzegt.',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF6B8E5A),
+                        fontSize: 12,
+                        color: Color(0xFF94A3B8),
                       ),
                     ),
                   ],
                 ),
               ),
+              // ── END PRICE BOX ──────────────────────────────────────────
+
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _isPurchasing ? null : _handleSubscribe,
@@ -186,15 +208,25 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         ),
                       )
                     : const Text(
-                        'Start 7 Dagen Gratis',
+                        'Abonneer — €5,99/mnd',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 17,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 4),
+              // Subordinate trial reminder directly below button
+              const Text(
+                'Eerste 7 dagen gratis — annuleer op elk moment',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(height: 8),
               TextButton(
                 onPressed: _isPurchasing ? null : _restorePurchases,
                 child: const Text(
@@ -205,9 +237,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
               const Text(
-                'Een betaling wordt in rekening gebracht op je Apple ID-account bij de bevestiging van de aankoop. Het abonnement wordt automatisch verlengd tenzij dit ten minste 24 uur voor het einde van de lopende periode wordt geannuleerd. Je kunt je abonnement op elk moment beheren in je Apple ID-instellingen.',
+                'Een betaling van €5,99 wordt in rekening gebracht op je Apple ID-account bij de bevestiging van de aankoop, na de gratis proefperiode van 7 dagen. Het abonnement wordt automatisch verlengd tenzij dit ten minste 24 uur voor het einde van de lopende periode wordt geannuleerd. Je kunt je abonnement op elk moment beheren in je Apple ID-instellingen.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
