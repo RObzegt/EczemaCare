@@ -42,11 +42,18 @@ class _PaywallScreenState extends State<PaywallScreen> {
     }
 
     if (_packages.isNotEmpty) {
-      final isSuccess = await PurchasesService.purchasePackage(_packages.first);
-      if (isSuccess && mounted) {
+      final outcome = await PurchasesService.purchasePackage(_packages.first);
+
+      if (outcome == PurchaseOutcome.success && mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
+        return;
+      }
+
+      if (outcome == PurchaseOutcome.cancelled && mounted) {
+        // User tapped Cancel in the payment sheet — reset silently.
+        setState(() => _isPurchasing = false);
         return;
       }
     }
