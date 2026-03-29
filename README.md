@@ -63,8 +63,6 @@ lib/
 │   └── toevoegen_screen.dart
 ├── services/
 │   ├── ai_analyse_service.dart
-│   ├── ai_analyse_service_improved.dart
-│   ├── api_service.dart
 │   └── purchases_service.dart
 └── widgets/
     ├── app_logo.dart

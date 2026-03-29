@@ -53,7 +53,7 @@ class PurchasesService {
     if (!_isSupported) return false;
     try {
       final CustomerInfo customerInfo = await Purchases.getCustomerInfo();
-      return customerInfo.entitlements.all['Triggertrace Pro']?.isActive ?? false;
+      return customerInfo.entitlements.all['premium']?.isActive ?? false;
     } on PlatformException catch (e) {
       debugPrint('hasActiveSubscription error: $e');
       return false;
@@ -91,7 +91,7 @@ class PurchasesService {
       // ignore: deprecated_member_use
       final PurchaseResult result = await Purchases.purchasePackage(package);
       final bool active =
-          result.customerInfo.entitlements.all['Triggertrace Pro']?.isActive ??
+          result.customerInfo.entitlements.all['premium']?.isActive ??
               false;
       return active ? PurchaseOutcome.success : PurchaseOutcome.error;
     } on PlatformException catch (e) {
@@ -109,7 +109,7 @@ class PurchasesService {
     if (!_isSupported) return false;
     try {
       final CustomerInfo customerInfo = await Purchases.restorePurchases();
-      return customerInfo.entitlements.all['Triggertrace Pro']?.isActive ?? false;
+      return customerInfo.entitlements.all['premium']?.isActive ?? false;
     } on PlatformException catch (e) {
       debugPrint('restorePurchases error: $e');
       return false;
