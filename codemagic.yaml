@@ -13,6 +13,7 @@ workflows:
           - "EczemaCare ios_app_store 1772991975"
       vars:
         BUNDLE_ID: "com.orions.eczemacare"
+      flutter: stable
       xcode: latest
       cocoapods: default
     scripts:
