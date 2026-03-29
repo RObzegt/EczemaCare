@@ -33,6 +33,12 @@ workflows:
       - name: Set up code signing
         script: |
           xcode-project use-profiles
+      - name: Verify signing config
+        script: |
+          echo "=== Code Signing Settings ==="
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -showBuildSettings | grep -E "CODE_SIGN|DEVELOPMENT_TEAM|PROVISIONING|PRODUCT_BUNDLE|ENTITLEMENTS" || true
+          echo "=== Provisioning Profiles ==="
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || echo "No profiles found"
       - name: Package IPA
         script: |
           xcode-project build-ipa \
