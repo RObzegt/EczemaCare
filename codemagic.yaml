@@ -20,9 +20,6 @@ workflows:
       - name: Install dependencies
         script: |
           flutter pub get
-      - name: Set up code signing
-        script: |
-          xcode-project use-profiles
       - name: Auto-increment build number
         script: |
           cd ios
@@ -33,12 +30,14 @@ workflows:
           flutter build ios --release --no-codesign \
             --dart-define=REVENUECAT_APPLE_KEY=$REVENUECAT_APPLE_KEY \
             --dart-define=REVENUECAT_GOOGLE_KEY=$REVENUECAT_GOOGLE_KEY
+      - name: Set up code signing
+        script: |
+          xcode-project use-profiles
       - name: Package IPA
         script: |
           xcode-project build-ipa \
             --workspace ios/Runner.xcworkspace \
-            --scheme Runner \
-            --archive-flags="-destination 'generic/platform=iOS'"
+            --scheme Runner
     artifacts:
       - "build/ios/ipa/*.ipa"
     publishing:
