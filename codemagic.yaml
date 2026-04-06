@@ -83,22 +83,61 @@ workflows:
       - name: Export IPA
         script: |
           set -e
-          cat > /tmp/ExportOptions.plist << 'EOF'
+
+          # Read the provisioning profile name that use-profiles injected into the project
+          PROFILE_NAME=$(xcodebuild -workspace ios/Runner.xcworkspace \
+            -scheme Runner -configuration Release -showBuildSettings 2>/dev/null \
+            | grep 'PROVISIONING_PROFILE_SPECIFIER' | head -1 | sed 's/.*= *//')
+          echo "Resolved provisioning profile: '$PROFILE_NAME'"
+
+          # Fallback: if empty, scan installed profiles for our bundle ID
+          if [ -z "$PROFILE_NAME" ]; then
+            echo "PROVISIONING_PROFILE_SPECIFIER is empty, scanning installed profiles..."
+            for p in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
+              PNAME=$(security cms -D -i "$p" 2>/dev/null | plutil -extract Name raw -o - - 2>/dev/null || true)
+              PBUNDLE=$(security cms -D -i "$p" 2>/dev/null | plutil -extract Entitlements.application-identifier raw -o - - 2>/dev/null || true)
+              echo "  Found: $PNAME ($PBUNDLE)"
+              if echo "$PBUNDLE" | grep -q "com.orions.eczemacare"; then
+                PROFILE_NAME="$PNAME"
+                echo "  ✅ Matched!"
+                break
+              fi
+            done
+          fi
+
+          if [ -z "$PROFILE_NAME" ]; then
+            echo "ERROR: Could not determine provisioning profile name"
+            exit 1
+          fi
+
+          echo "Using provisioning profile: $PROFILE_NAME"
+
+          cat > /tmp/ExportOptions.plist << EXPORTEOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
             <key>method</key>
-            <string>app-store</string>
+            <string>app-store-connect</string>
+            <key>signingStyle</key>
+            <string>manual</string>
             <key>teamID</key>
             <string>JTY452RWN4</string>
             <key>uploadSymbols</key>
             <true/>
             <key>compileBitcode</key>
             <false/>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.orions.eczemacare</key>
+              <string>${PROFILE_NAME}</string>
+            </dict>
           </dict>
           </plist>
-          EOF
+          EXPORTEOF
+
+          echo "=== ExportOptions.plist ==="
+          cat /tmp/ExportOptions.plist
 
           mkdir -p "$EXPORT_PATH"
           xcodebuild \
@@ -106,6 +145,7 @@ workflows:
             -archivePath "$ARCHIVE_PATH" \
             -exportPath "$EXPORT_PATH" \
             -exportOptionsPlist /tmp/ExportOptions.plist \
+            -allowProvisioningUpdates \
             2>&1 | tee /tmp/xcodebuild_export.log || {
               echo ""
               echo "=========================================="
