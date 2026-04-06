@@ -97,29 +97,41 @@ class GrafiekenView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Legenda
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: const BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text('$topAllergen intake (# producten)', style: const TextStyle(fontSize: 11, color: Colors.blue)),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                Text('$topAllergen intake (# producten)', style: const TextStyle(fontSize: 11, color: Colors.blue)),
-                const SizedBox(width: 16),
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text('Eczeem (0-10)', style: TextStyle(fontSize: 11, color: Colors.red)),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                const Text('Eczeem (0-10)', style: TextStyle(fontSize: 11, color: Colors.red)),
               ],
             ),
             const SizedBox(height: 12),
@@ -132,7 +144,8 @@ class GrafiekenView extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: displayData.length > 7 ? 2 : 1,
+                        reservedSize: 28,
+                        interval: displayData.length > 10 ? 3 : (displayData.length > 7 ? 2 : 1),
                         getTitlesWidget: (value, meta) {
                           final index = value.toInt();
                           if (index >= displayData.length) return const SizedBox.shrink();
@@ -227,29 +240,41 @@ class GrafiekenView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Legenda
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: const BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text('Gem. $topAllergen', style: const TextStyle(fontSize: 11, color: Colors.blue)),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                Text('Gem. $topAllergen', style: const TextStyle(fontSize: 11, color: Colors.blue)),
-                const SizedBox(width: 16),
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text('Gem. eczeem', style: TextStyle(fontSize: 11, color: Colors.red)),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                const Text('Gem. eczeem', style: TextStyle(fontSize: 11, color: Colors.red)),
               ],
             ),
             const SizedBox(height: 12),
@@ -341,29 +366,41 @@ class GrafiekenView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Legenda
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: const BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text('Gem. $topAllergen', style: const TextStyle(fontSize: 11, color: Colors.blue)),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                Text('Gem. $topAllergen', style: const TextStyle(fontSize: 11, color: Colors.blue)),
-                const SizedBox(width: 16),
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text('Gem. eczeem', style: TextStyle(fontSize: 11, color: Colors.red)),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                const Text('Gem. eczeem', style: TextStyle(fontSize: 11, color: Colors.red)),
               ],
             ),
             const SizedBox(height: 12),
