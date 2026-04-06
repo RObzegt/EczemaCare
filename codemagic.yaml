@@ -13,8 +13,10 @@ workflows:
           - "EczemaCare ios_app_store 1772991975"
       vars:
         BUNDLE_ID: "com.orions.eczemacare"
+        ARCHIVE_PATH: "/Users/builder/clone/build/ios/xcarchive/Runner.xcarchive"
+        EXPORT_PATH: "/Users/builder/clone/build/ios/ipa"
       flutter: stable
-      xcode: latest
+      xcode: 16.3
       cocoapods: default
     scripts:
       - name: Install dependencies
@@ -25,7 +27,7 @@ workflows:
           cd ios
           agvtool new-version -all $BUILD_ID
           cd ..
-      - name: Build iOS
+      - name: Build iOS (no codesign)
         script: |
           flutter build ios --release --no-codesign \
             --dart-define=REVENUECAT_APPLE_KEY=$REVENUECAT_APPLE_KEY \
@@ -35,17 +37,63 @@ workflows:
           xcode-project use-profiles
       - name: Verify signing config
         script: |
+          echo "=== Xcode version ==="
+          xcodebuild -version
           echo "=== Code Signing Settings ==="
-          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -showBuildSettings | grep -E "CODE_SIGN|DEVELOPMENT_TEAM|PROVISIONING|PRODUCT_BUNDLE|ENTITLEMENTS" || true
-          echo "=== Provisioning Profiles ==="
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
+            -configuration Release -showBuildSettings 2>&1 \
+            | grep -E "CODE_SIGN|DEVELOPMENT_TEAM|PROVISIONING|PRODUCT_BUNDLE|ENTITLEMENTS"
+          echo "=== Entitlements file ==="
+          cat ios/Runner/Runner.entitlements || echo "Runner.entitlements NOT FOUND"
+          echo "=== Provisioning Profiles installed ==="
           ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || echo "No profiles found"
-      - name: Package IPA
+      - name: Archive (with full xcodebuild output)
         script: |
-          xcode-project build-ipa \
-            --workspace ios/Runner.xcworkspace \
-            --scheme Runner
+          set -o pipefail
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -archivePath "$ARCHIVE_PATH" \
+            archive \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            DEVELOPMENT_TEAM=JTY452RWN4 \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            CODE_SIGN_STYLE=Manual \
+            2>&1 | tee /tmp/xcodebuild_archive.log
+          echo "=== Archive exit code: $? ==="
+      - name: Export IPA
+        script: |
+          # Create export options plist
+          cat > /tmp/ExportOptions.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>JTY452RWN4</string>
+            <key>uploadSymbols</key>
+            <true/>
+            <key>compileBitcode</key>
+            <false/>
+          </dict>
+          </plist>
+          EOF
+
+          mkdir -p "$EXPORT_PATH"
+          set -o pipefail
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportPath "$EXPORT_PATH" \
+            -exportOptionsPlist /tmp/ExportOptions.plist \
+            2>&1 | tee /tmp/xcodebuild_export.log
     artifacts:
       - "build/ios/ipa/*.ipa"
+      - "/tmp/xcodebuild_archive.log"
+      - "/tmp/xcodebuild_export.log"
     publishing:
       app_store_connect:
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
