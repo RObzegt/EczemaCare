@@ -9,8 +9,11 @@ workflows:
         - apiconfig
         - apple_auth
       ios_signing:
-        provisioning_profiles:
-          - "EczemaCare ios_app_store 1772991975"
+        # Automatic signing — Codemagic fetches/creates a fresh provisioning
+        # profile via the App Store Connect API every build, so the profile
+        # always includes the correct entitlements (including IAP).
+        distribution_type: app_store
+        bundle_identifier: com.orions.eczemacare
       vars:
         BUNDLE_ID: "com.orions.eczemacare"
         ARCHIVE_PATH: "/Users/builder/clone/build/ios/xcarchive/Runner.xcarchive"
@@ -47,7 +50,7 @@ workflows:
           cat ios/Runner/Runner.entitlements || echo "Runner.entitlements NOT FOUND"
           echo "=== Provisioning Profiles installed ==="
           ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || echo "No profiles found"
-      - name: Archive (with full xcodebuild output)
+      - name: Archive
         script: |
           set -e
           set -o pipefail
@@ -60,9 +63,6 @@ workflows:
             -archivePath "$ARCHIVE_PATH" \
             archive \
             COMPILER_INDEX_STORE_ENABLE=NO \
-            DEVELOPMENT_TEAM=JTY452RWN4 \
-            "CODE_SIGN_IDENTITY=Apple Distribution" \
-            CODE_SIGN_STYLE=Manual \
             2>&1 | tee /tmp/xcodebuild_archive.log || {
               echo ""
               echo "=========================================="
@@ -72,12 +72,11 @@ workflows:
               exit 1
             }
 
-          echo "✅ Archive created successfully at: $ARCHIVE_PATH"
+          echo "✅ Archive created: $ARCHIVE_PATH"
           ls -lah "$(dirname "$ARCHIVE_PATH")"
-
       - name: Export IPA
         script: |
-          # Create export options plist
+          set -e
           cat > /tmp/ExportOptions.plist << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -96,13 +95,22 @@ workflows:
           EOF
 
           mkdir -p "$EXPORT_PATH"
-          set -o pipefail
           xcodebuild \
             -exportArchive \
             -archivePath "$ARCHIVE_PATH" \
             -exportPath "$EXPORT_PATH" \
             -exportOptionsPlist /tmp/ExportOptions.plist \
-            2>&1 | tee /tmp/xcodebuild_export.log
+            2>&1 | tee /tmp/xcodebuild_export.log || {
+              echo ""
+              echo "=========================================="
+              echo "  EXPORT FAILED — last 30 lines:"
+              echo "=========================================="
+              tail -30 /tmp/xcodebuild_export.log
+              exit 1
+            }
+
+          echo "✅ IPA exported to: $EXPORT_PATH"
+          ls -lah "$EXPORT_PATH"
     artifacts:
       - "build/ios/ipa/*.ipa"
       - "/tmp/xcodebuild_archive.log"
