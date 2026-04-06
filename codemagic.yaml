@@ -26,8 +26,10 @@ workflows:
           flutter pub get
       - name: Auto-increment build number
         script: |
+          BUILD_NUM=$((${BUILD_NUMBER:-0} + 100))
+          echo "Setting build number to: $BUILD_NUM"
           cd ios
-          agvtool new-version -all $BUILD_ID
+          agvtool new-version -all $BUILD_NUM
           cd ..
       - name: Build iOS (no codesign)
         script: |
