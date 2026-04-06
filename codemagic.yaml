@@ -48,8 +48,14 @@ workflows:
             | grep -E "CODE_SIGN|DEVELOPMENT_TEAM|PROVISIONING|PRODUCT_BUNDLE|ENTITLEMENTS"
           echo "=== Entitlements file ==="
           cat ios/Runner/Runner.entitlements || echo "Runner.entitlements NOT FOUND"
-          echo "=== Provisioning Profiles installed ==="
-          ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || echo "No profiles found"
+          echo "=== Installed Provisioning Profiles + their entitlements ==="
+          for profile in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
+            echo "--- Profile: $(basename $profile) ---"
+            security cms -D -i "$profile" 2>/dev/null \
+              | plutil -extract Entitlements xml1 -o - - 2>/dev/null \
+              || security cms -D -i "$profile" 2>/dev/null | grep -A30 "Entitlements"
+            echo ""
+          done || echo "No profiles found"
       - name: Archive
         script: |
           set -e
@@ -62,6 +68,7 @@ workflows:
             -configuration Release \
             -archivePath "$ARCHIVE_PATH" \
             archive \
+            -allowProvisioningUpdates \
             COMPILER_INDEX_STORE_ENABLE=NO \
             2>&1 | tee /tmp/xcodebuild_archive.log || {
               echo ""
