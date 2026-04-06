@@ -9,11 +9,10 @@ workflows:
         - apiconfig
         - apple_auth
       ios_signing:
-        # Automatic signing — Codemagic fetches/creates a fresh provisioning
-        # profile via the App Store Connect API every build, so the profile
-        # always includes the correct entitlements (including IAP).
-        distribution_type: app_store
-        bundle_identifier: com.orions.eczemacare
+        # Named profile — user must regenerate this in Apple Developer Portal
+        # (Profiles → EczemaCare ios_app_store → Edit → Regenerate → re-upload to Codemagic)
+        provisioning_profiles:
+          - "EczemaCare ios_app_store 1772991975"
       vars:
         BUNDLE_ID: "com.orions.eczemacare"
         ARCHIVE_PATH: "/Users/builder/clone/build/ios/xcarchive/Runner.xcarchive"
