@@ -18,7 +18,7 @@ workflows:
         ARCHIVE_PATH: "/Users/builder/clone/build/ios/xcarchive/Runner.xcarchive"
         EXPORT_PATH: "/Users/builder/clone/build/ios/ipa"
       flutter: stable
-      xcode: 16.3
+      xcode: latest
       cocoapods: default
     scripts:
       - name: Install dependencies
