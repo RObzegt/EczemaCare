@@ -153,7 +153,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   children: const [
                     // PRIMARY: billed amount — largest, most prominent element
                     Text(
-                      '€5,99',
+                      '€2,99',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 52,
@@ -215,7 +215,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         ),
                       )
                     : const Text(
-                        'Abonneer — €5,99/mnd',
+                        'Abonneer — €2,99/mnd',
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
@@ -246,7 +246,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
               ),
               const SizedBox(height: 28),
               const Text(
-                'Een betaling van €5,99 wordt in rekening gebracht op je Apple ID-account bij de bevestiging van de aankoop, na de gratis proefperiode van 7 dagen. Het abonnement wordt automatisch verlengd tenzij dit ten minste 24 uur voor het einde van de lopende periode wordt geannuleerd. Je kunt je abonnement op elk moment beheren in je Apple ID-instellingen.',
+                'Een betaling van €2,99 wordt in rekening gebracht op je Apple ID-account bij de bevestiging van de aankoop, na de gratis proefperiode van 7 dagen. Het abonnement wordt automatisch verlengd tenzij dit ten minste 24 uur voor het einde van de lopende periode wordt geannuleerd. Je kunt je abonnement op elk moment beheren in je Apple ID-instellingen.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
