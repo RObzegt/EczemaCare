@@ -60,9 +60,11 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
     if (mounted) {
       setState(() => _isPurchasing = false);
+      final errorDetail = PurchasesService.lastError ?? 'Packages: ${_packages.length}';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Abonnement kon niet worden gestart. Probeer het opnieuw.'),
+        SnackBar(
+          content: Text('Fout: $errorDetail'),
+          duration: const Duration(seconds: 10),
         ),
       );
     }

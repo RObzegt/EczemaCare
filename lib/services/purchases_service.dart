@@ -85,14 +85,24 @@ class PurchasesService {
   /// Returns [PurchaseOutcome.success] if the entitlement becomes active,
   /// [PurchaseOutcome.cancelled] if the user dismissed the payment sheet,
   /// or [PurchaseOutcome.error] for any other failure.
+  static String? lastError;
+
   static Future<PurchaseOutcome> purchasePackage(Package package) async {
-    if (!_isSupported) return PurchaseOutcome.error;
+    lastError = null;
+    if (!_isSupported) {
+      lastError = 'Platform not supported';
+      return PurchaseOutcome.error;
+    }
     try {
       // ignore: deprecated_member_use
       final PurchaseResult result = await Purchases.purchasePackage(package);
       final bool active =
           result.customerInfo.entitlements.all['premium']?.isActive ??
               false;
+      if (!active) {
+        lastError = 'Purchase completed but entitlement "premium" not active. '
+            'Active entitlements: ${result.customerInfo.entitlements.all.keys.toList()}';
+      }
       return active ? PurchaseOutcome.success : PurchaseOutcome.error;
     } on PlatformException catch (e) {
       final errorCode = PurchasesErrorHelper.getErrorCode(e);
@@ -100,7 +110,11 @@ class PurchasesService {
         debugPrint('purchasePackage: user cancelled');
         return PurchaseOutcome.cancelled;
       }
+      lastError = 'RC error $errorCode: ${e.message}';
       debugPrint('purchasePackage error: $e');
+      return PurchaseOutcome.error;
+    } catch (e) {
+      lastError = 'Unexpected: $e';
       return PurchaseOutcome.error;
     }
   }

@@ -15,7 +15,8 @@ void main() async {
   
   // Initialiseer RevenueCat
   await PurchasesService.init();
-  final bool hasSubscription = await PurchasesService.hasActiveSubscription();
+  const bool bypassPaywall = bool.fromEnvironment('BYPASS_PAYWALL');
+  final bool hasSubscription = bypassPaywall || await PurchasesService.hasActiveSubscription();
   
   runApp(TriggerTraceApp(hasSubscription: hasSubscription));
 }
