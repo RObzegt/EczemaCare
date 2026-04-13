@@ -25,32 +25,26 @@ workflows:
         script: |
           flutter pub get
 
-      # Auto-bump patch version (e.g. 4.2.4 → 4.2.5)
-      - name: Auto-bump CFBundleShortVersionString
+      # Auto-bump patch version in pubspec.yaml (e.g. 4.2.4 → 4.2.5)
+      # Flutter propagates this to CFBundleShortVersionString via $(FLUTTER_BUILD_NAME)
+      - name: Auto-bump version
         script: |
-          echo "Auto bumping marketing version..."
+          CURRENT=$(grep '^version:' pubspec.yaml | head -1 | sed 's/version: *//')
+          echo "Current pubspec version: $CURRENT"
 
-          CURRENT_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" ios/Runner/Info.plist)
-          echo "Current marketing version: $CURRENT_VERSION"
+          VERSION_PART=$(echo "$CURRENT" | sed 's/+.*//')
+          BUILD_PART=$(echo "$CURRENT" | sed 's/.*+//')
 
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
-
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_PART"
           NEW_PATCH=$((PATCH + 1))
           NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
 
-          echo "New marketing version: $NEW_VERSION"
-
-          cd ios
-          agvtool new-marketing-version $NEW_VERSION
-          cd ..
-
-      - name: Auto-increment build number
-        script: |
           BUILD_NUM=$((${BUILD_NUMBER:-0} + 100))
-          echo "Setting build number to: $BUILD_NUM"
-          cd ios
-          agvtool new-version -all $BUILD_NUM
-          cd ..
+
+          echo "New version: $NEW_VERSION+$BUILD_NUM"
+          sed -i "s/^version: .*/version: $NEW_VERSION+$BUILD_NUM/" pubspec.yaml
+
+          grep '^version:' pubspec.yaml
 
       - name: Build iOS (no codesign)
         script: |
