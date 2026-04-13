@@ -60,11 +60,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
     if (mounted) {
       setState(() => _isPurchasing = false);
-      final errorDetail = PurchasesService.lastError ?? 'Packages: ${_packages.length}';
+      final errorDetail = PurchasesService.lastError
+          ?? 'Packages: ${_packages.length}';
+      final offerDebug = PurchasesService.lastOfferingsDebug ?? 'n/a';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Fout: $errorDetail'),
-          duration: const Duration(seconds: 10),
+          content: Text('Fout: $errorDetail\nOfferings: $offerDebug'),
+          duration: const Duration(seconds: 30),
         ),
       );
     }

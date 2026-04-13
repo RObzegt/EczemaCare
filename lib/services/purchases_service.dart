@@ -61,16 +61,40 @@ class PurchasesService {
   }
 
   static Future<List<Package>> getOfferings({int retries = 3}) async {
-    if (!_isSupported) return [];
+    if (!_isSupported) {
+      lastOfferingsDebug = 'Platform not supported';
+      return [];
+    }
     for (int attempt = 1; attempt <= retries; attempt++) {
       try {
         final Offerings offerings = await Purchases.getOfferings();
-        if (offerings.current != null &&
-            offerings.current!.availablePackages.isNotEmpty) {
+
+        final allIds = offerings.all.keys.toList();
+        final hasCurrent = offerings.current != null;
+        final currentId = offerings.current?.identifier ?? 'null';
+        final currentPkgs = offerings.current?.availablePackages.length ?? 0;
+
+        final pkgDetails = <String>[];
+        for (final entry in offerings.all.entries) {
+          final o = entry.value;
+          final pIds = o.availablePackages
+              .map((p) => '${p.packageType.name}:${p.storeProduct.identifier}')
+              .toList();
+          pkgDetails.add('${entry.key}(pkgs=${o.availablePackages.length},$pIds)');
+        }
+
+        lastOfferingsDebug = 'all=${allIds}, current=$currentId, '
+            'currentPkgs=$currentPkgs, details=$pkgDetails';
+        debugPrint('getOfferings attempt $attempt: $lastOfferingsDebug');
+
+        if (hasCurrent && currentPkgs > 0) {
           return offerings.current!.availablePackages;
         }
-        debugPrint('getOfferings attempt $attempt: no packages available');
       } on PlatformException catch (e) {
+        lastOfferingsDebug = 'PlatformException: ${e.code} ${e.message}';
+        debugPrint('getOfferings attempt $attempt error: $e');
+      } catch (e) {
+        lastOfferingsDebug = 'Exception: $e';
         debugPrint('getOfferings attempt $attempt error: $e');
       }
       if (attempt < retries) {
@@ -86,6 +110,7 @@ class PurchasesService {
   /// [PurchaseOutcome.cancelled] if the user dismissed the payment sheet,
   /// or [PurchaseOutcome.error] for any other failure.
   static String? lastError;
+  static String? lastOfferingsDebug;
 
   static Future<PurchaseOutcome> purchasePackage(Package package) async {
     lastError = null;
