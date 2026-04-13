@@ -54,3 +54,174 @@ workflows:
           BUILD_NUM=$((${BUILD_NUMBER:-0} + 100))
           echo "Setting build number to: $BUILD_NUM"
           cd ios
+workflows:
+  ios-release:
+    name: iOS Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      groups:
+        - apiconfig
+        - apple_auth
+      ios_signing:
+        # Named profile — user must regenerate this in Apple Developer Portal
+        # (Profiles → EczemaCare ios_app_store → Edit → Regenerate → re-upload to Codemagic)
+        provisioning_profiles:
+          - "EczemaCare ios_app_store 1772991975"
+      vars:
+        BUNDLE_ID: "com.orions.eczemacare"
+        ARCHIVE_PATH: "/Users/builder/clone/build/ios/xcarchive/Runner.xcarchive"
+        EXPORT_PATH: "/Users/builder/clone/build/ios/ipa"
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install dependencies
+        script: |
+          flutter pub get
+      - name: Auto-increment build number
+        script: |
+          BUILD_NUM=$((${BUILD_NUMBER:-0} + 100))
+          echo "Setting build number to: $BUILD_NUM"
+          cd ios
+          agvtool new-version -all $BUILD_NUM
+          cd ..
+      - name: Build iOS (no codesign)
+        script: |
+          flutter build ios --release --no-codesign \
+            --dart-define=REVENUECAT_APPLE_KEY=$REVENUECAT_APPLE_KEY \
+            --dart-define=REVENUECAT_GOOGLE_KEY=$REVENUECAT_GOOGLE_KEY
+      - name: Set up code signing
+        script: |
+          xcode-project use-profiles
+      - name: Verify signing config
+        script: |
+          echo "=== Xcode version ==="
+          xcodebuild -version
+          echo "=== Code Signing Settings ==="
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
+            -configuration Release -showBuildSettings 2>&1 \
+            | grep -E "CODE_SIGN|DEVELOPMENT_TEAM|PROVISIONING|PRODUCT_BUNDLE|ENTITLEMENTS"
+          echo "=== Entitlements file ==="
+          cat ios/Runner/Runner.entitlements || echo "Runner.entitlements NOT FOUND"
+          echo "=== Installed Provisioning Profiles + their entitlements ==="
+          for profile in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
+            echo "--- Profile: $(basename $profile) ---"
+            security cms -D -i "$profile" 2>/dev/null \
+              | plutil -extract Entitlements xml1 -o - - 2>/dev/null \
+              || security cms -D -i "$profile" 2>/dev/null | grep -A30 "Entitlements"
+            echo ""
+          done || echo "No profiles found"
+      - name: Archive
+        script: |
+          set -e
+          set -o pipefail
+          mkdir -p "$(dirname "$ARCHIVE_PATH")"
+
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -archivePath "$ARCHIVE_PATH" \
+            archive \
+            -allowProvisioningUpdates \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            2>&1 | tee /tmp/xcodebuild_archive.log || {
+              echo ""
+              echo "=========================================="
+              echo "  XCODEBUILD ARCHIVE FAILED — last 60 lines:"
+              echo "=========================================="
+              tail -60 /tmp/xcodebuild_archive.log
+              exit 1
+            }
+
+          echo "✅ Archive created: $ARCHIVE_PATH"
+          ls -lah "$(dirname "$ARCHIVE_PATH")"
+      - name: Export IPA
+        script: |
+          set -e
+
+          # Read the provisioning profile name that use-profiles injected into the project
+          PROFILE_NAME=$(xcodebuild -workspace ios/Runner.xcworkspace \
+            -scheme Runner -configuration Release -showBuildSettings 2>/dev/null \
+            | grep 'PROVISIONING_PROFILE_SPECIFIER' | head -1 | sed 's/.*= *//')
+          echo "Resolved provisioning profile: '$PROFILE_NAME'"
+
+          # Fallback: if empty, scan installed profiles for our bundle ID
+          if [ -z "$PROFILE_NAME" ]; then
+            echo "PROVISIONING_PROFILE_SPECIFIER is empty, scanning installed profiles..."
+            for p in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
+              PNAME=$(security cms -D -i "$p" 2>/dev/null | plutil -extract Name raw -o - - 2>/dev/null || true)
+              PBUNDLE=$(security cms -D -i "$p" 2>/dev/null | plutil -extract Entitlements.application-identifier raw -o - - 2>/dev/null || true)
+              echo "  Found: $PNAME ($PBUNDLE)"
+              if echo "$PBUNDLE" | grep -q "com.orions.eczemacare"; then
+                PROFILE_NAME="$PNAME"
+                echo "  ✅ Matched!"
+                break
+              fi
+            done
+          fi
+
+          if [ -z "$PROFILE_NAME" ]; then
+            echo "ERROR: Could not determine provisioning profile name"
+            exit 1
+          fi
+
+          echo "Using provisioning profile: $PROFILE_NAME"
+
+          cat > /tmp/ExportOptions.plist << EXPORTEOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>teamID</key>
+            <string>JTY452RWN4</string>
+            <key>uploadSymbols</key>
+            <true/>
+            <key>compileBitcode</key>
+            <false/>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.orions.eczemacare</key>
+              <string>${PROFILE_NAME}</string>
+            </dict>
+          </dict>
+          </plist>
+          EXPORTEOF
+
+          echo "=== ExportOptions.plist ==="
+          cat /tmp/ExportOptions.plist
+
+          mkdir -p "$EXPORT_PATH"
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportPath "$EXPORT_PATH" \
+            -exportOptionsPlist /tmp/ExportOptions.plist \
+            -allowProvisioningUpdates \
+            2>&1 | tee /tmp/xcodebuild_export.log || {
+              echo ""
+              echo "=========================================="
+              echo "  EXPORT FAILED — last 30 lines:"
+              echo "=========================================="
+              tail -30 /tmp/xcodebuild_export.log
+              exit 1
+            }
+
+          echo "✅ IPA exported to: $EXPORT_PATH"
+          ls -lah "$EXPORT_PATH"
+    artifacts:
+      - "build/ios/ipa/*.ipa"
+      - "/tmp/xcodebuild_archive.log"
+      - "/tmp/xcodebuild_export.log"
+    publishing:
+      app_store_connect:
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        submit_to_testflight: true
+        submit_to_app_store: false
