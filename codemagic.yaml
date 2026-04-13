@@ -9,30 +9,26 @@ workflows:
       groups:
         - apiconfig
         - apple_auth
-
       ios_signing:
         provisioning_profiles:
           - "EczemaCare ios_app_store 1772991975"
-
       vars:
         BUNDLE_ID: "com.orions.eczemacare"
         ARCHIVE_PATH: "/Users/builder/clone/build/ios/xcarchive/Runner.xcarchive"
         EXPORT_PATH: "/Users/builder/clone/build/ios/ipa"
-
       flutter: stable
       xcode: latest
       cocoapods: default
 
     scripts:
-      # 🔹 Install packages
       - name: Install dependencies
         script: |
           flutter pub get
 
-      # 🔹 AUTO BUMP MARKETING VERSION
+      # Auto-bump patch version (e.g. 4.2.4 → 4.2.5)
       - name: Auto-bump CFBundleShortVersionString
         script: |
-          echo "🔼 Auto bumping marketing version..."
+          echo "Auto bumping marketing version..."
 
           CURRENT_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" ios/Runner/Info.plist)
           echo "Current marketing version: $CURRENT_VERSION"
@@ -48,37 +44,6 @@ workflows:
           agvtool new-marketing-version $NEW_VERSION
           cd ..
 
-      # 🔹 AUTO INCREMENT BUILD NUMBER
-      - name: Auto-increment build number
-        script: |
-          BUILD_NUM=$((${BUILD_NUMBER:-0} + 100))
-          echo "Setting build number to: $BUILD_NUM"
-          cd ios
-workflows:
-  ios-release:
-    name: iOS Release
-    max_build_duration: 60
-    instance_type: mac_mini_m2
-    environment:
-      groups:
-        - apiconfig
-        - apple_auth
-      ios_signing:
-        # Named profile — user must regenerate this in Apple Developer Portal
-        # (Profiles → EczemaCare ios_app_store → Edit → Regenerate → re-upload to Codemagic)
-        provisioning_profiles:
-          - "EczemaCare ios_app_store 1772991975"
-      vars:
-        BUNDLE_ID: "com.orions.eczemacare"
-        ARCHIVE_PATH: "/Users/builder/clone/build/ios/xcarchive/Runner.xcarchive"
-        EXPORT_PATH: "/Users/builder/clone/build/ios/ipa"
-      flutter: stable
-      xcode: latest
-      cocoapods: default
-    scripts:
-      - name: Install dependencies
-        script: |
-          flutter pub get
       - name: Auto-increment build number
         script: |
           BUILD_NUM=$((${BUILD_NUMBER:-0} + 100))
@@ -86,14 +51,17 @@ workflows:
           cd ios
           agvtool new-version -all $BUILD_NUM
           cd ..
+
       - name: Build iOS (no codesign)
         script: |
           flutter build ios --release --no-codesign \
             --dart-define=REVENUECAT_APPLE_KEY=$REVENUECAT_APPLE_KEY \
             --dart-define=REVENUECAT_GOOGLE_KEY=$REVENUECAT_GOOGLE_KEY
+
       - name: Set up code signing
         script: |
           xcode-project use-profiles
+
       - name: Verify signing config
         script: |
           echo "=== Xcode version ==="
@@ -112,6 +80,7 @@ workflows:
               || security cms -D -i "$profile" 2>/dev/null | grep -A30 "Entitlements"
             echo ""
           done || echo "No profiles found"
+
       - name: Archive
         script: |
           set -e
@@ -135,19 +104,18 @@ workflows:
               exit 1
             }
 
-          echo "✅ Archive created: $ARCHIVE_PATH"
+          echo "Archive created: $ARCHIVE_PATH"
           ls -lah "$(dirname "$ARCHIVE_PATH")"
+
       - name: Export IPA
         script: |
           set -e
 
-          # Read the provisioning profile name that use-profiles injected into the project
           PROFILE_NAME=$(xcodebuild -workspace ios/Runner.xcworkspace \
             -scheme Runner -configuration Release -showBuildSettings 2>/dev/null \
             | grep 'PROVISIONING_PROFILE_SPECIFIER' | head -1 | sed 's/.*= *//')
           echo "Resolved provisioning profile: '$PROFILE_NAME'"
 
-          # Fallback: if empty, scan installed profiles for our bundle ID
           if [ -z "$PROFILE_NAME" ]; then
             echo "PROVISIONING_PROFILE_SPECIFIER is empty, scanning installed profiles..."
             for p in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
@@ -156,7 +124,7 @@ workflows:
               echo "  Found: $PNAME ($PBUNDLE)"
               if echo "$PBUNDLE" | grep -q "com.orions.eczemacare"; then
                 PROFILE_NAME="$PNAME"
-                echo "  ✅ Matched!"
+                echo "  Matched!"
                 break
               fi
             done
@@ -212,12 +180,14 @@ workflows:
               exit 1
             }
 
-          echo "✅ IPA exported to: $EXPORT_PATH"
+          echo "IPA exported to: $EXPORT_PATH"
           ls -lah "$EXPORT_PATH"
+
     artifacts:
       - "build/ios/ipa/*.ipa"
       - "/tmp/xcodebuild_archive.log"
       - "/tmp/xcodebuild_export.log"
+
     publishing:
       app_store_connect:
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
