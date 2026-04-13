@@ -25,16 +25,14 @@ workflows:
         script: |
           flutter pub get
 
-      # Auto-bump patch version in pubspec.yaml (e.g. 4.2.4 → 4.2.5)
-      # Flutter propagates this to CFBundleShortVersionString via $(FLUTTER_BUILD_NAME)
-      - name: Auto-bump version
+      - name: Build iOS with auto-bumped version
         script: |
+          set -e
+
           CURRENT=$(grep '^version:' pubspec.yaml | head -1 | sed 's/version: *//')
           echo "Current pubspec version: $CURRENT"
 
           VERSION_PART=$(echo "$CURRENT" | sed 's/+.*//')
-          BUILD_PART=$(echo "$CURRENT" | sed 's/.*+//')
-
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_PART"
           NEW_PATCH=$((PATCH + 1))
           NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
@@ -42,16 +40,26 @@ workflows:
           BUILD_NUM=$((${BUILD_NUMBER:-0} + 500))
           if [ "$BUILD_NUM" -le 199 ]; then BUILD_NUM=500; fi
 
-          echo "New version: $NEW_VERSION+$BUILD_NUM"
-          sed -i "s/^version: .*/version: $NEW_VERSION+$BUILD_NUM/" pubspec.yaml
+          echo "=========================================="
+          echo "  Marketing version: $NEW_VERSION"
+          echo "  Build number:      $BUILD_NUM"
+          echo "=========================================="
 
-          grep '^version:' pubspec.yaml
+          # Set version via agvtool so xcodebuild archive picks it up
+          cd ios
+          agvtool new-marketing-version "$NEW_VERSION"
+          agvtool new-version -all "$BUILD_NUM"
+          cd ..
 
-      - name: Build iOS (no codesign)
-        script: |
+          # Also pass via flutter flags (belt and suspenders)
           flutter build ios --release --no-codesign \
+            --build-name="$NEW_VERSION" \
+            --build-number="$BUILD_NUM" \
             --dart-define=REVENUECAT_APPLE_KEY=$REVENUECAT_APPLE_KEY \
             --dart-define=REVENUECAT_GOOGLE_KEY=$REVENUECAT_GOOGLE_KEY
+
+          echo "Verifying final version in Generated.xcconfig:"
+          cat ios/Flutter/Generated.xcconfig | grep -E "FLUTTER_BUILD"
 
       - name: Set up code signing
         script: |
@@ -61,20 +69,10 @@ workflows:
         script: |
           echo "=== Xcode version ==="
           xcodebuild -version
-          echo "=== Code Signing Settings ==="
+          echo "=== Build version settings ==="
           xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
             -configuration Release -showBuildSettings 2>&1 \
-            | grep -E "CODE_SIGN|DEVELOPMENT_TEAM|PROVISIONING|PRODUCT_BUNDLE|ENTITLEMENTS"
-          echo "=== Entitlements file ==="
-          cat ios/Runner/Runner.entitlements || echo "Runner.entitlements NOT FOUND"
-          echo "=== Installed Provisioning Profiles + their entitlements ==="
-          for profile in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
-            echo "--- Profile: $(basename $profile) ---"
-            security cms -D -i "$profile" 2>/dev/null \
-              | plutil -extract Entitlements xml1 -o - - 2>/dev/null \
-              || security cms -D -i "$profile" 2>/dev/null | grep -A30 "Entitlements"
-            echo ""
-          done || echo "No profiles found"
+            | grep -E "MARKETING_VERSION|CURRENT_PROJECT_VERSION|FLUTTER_BUILD|CODE_SIGN|DEVELOPMENT_TEAM|PROVISIONING|PRODUCT_BUNDLE"
 
       - name: Archive
         script: |
