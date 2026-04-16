@@ -159,27 +159,7 @@ class AIAnalyseService {
       }
     }
 
-    // 3. Analyseer Medicatie Effectiviteit
-    final dagenMetMedicatie = entries.where((e) => e.gezondheidsMetrics.any((m) => m.medicatieGebruikt)).toList();
-    final dagenZonderMedicatie = entries.where((e) => e.gezondheidsMetrics.any((m) => !m.medicatieGebruikt)).toList();
-
-    if (dagenMetMedicatie.isNotEmpty && dagenZonderMedicatie.isNotEmpty) {
-      final gemEczeemMetMed = _berekenGemiddeldeEczeem(dagenMetMedicatie);
-      final gemEczeemZonderMed = _berekenGemiddeldeEczeem(dagenZonderMedicatie);
-      final effect = gemEczeemZonderMed - gemEczeemMetMed;
-
-      if (effect > 0.3) {
-        correlaties.add(Correlatie(
-          voedselItem: "Behandeling",
-          symptoom: "Medicatie",
-          correlatieSterkte: -(effect / 10.0).clamp(-1.0, 1.0),
-          beschrijving: "🛡️ Medicatie helpt: Symptomen dalen met ${effect.toStringAsFixed(1)} punten op dagen van gebruik.",
-        ));
-      }
-    }
-
-    // 4. Analyseer Klinische Tekenen
-    _voegKlinischeAnalyseToe(entries, correlaties);
+    // Let op: op verzoek analyseren we alleen allergenen (geen medicatie/klinische onderdelen).
 
     // Sorteer op sterkte
     correlaties.sort((a, b) => b.correlatieSterkte.abs().compareTo(a.correlatieSterkte.abs()));

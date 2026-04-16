@@ -2,10 +2,64 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/dagboek_provider.dart';
 import '../widgets/app_logo.dart';
-import '../services/purchases_service.dart';
 
-class ProfielScreen extends StatelessWidget {
+class ProfielScreen extends StatefulWidget {
   const ProfielScreen({super.key});
+
+  @override
+  State<ProfielScreen> createState() => _ProfielScreenState();
+}
+
+class _ProfielScreenState extends State<ProfielScreen> {
+  final List<TextEditingController> _customControllers = List.generate(
+    3,
+    (_) => TextEditingController(),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    final provider = context.read<DagboekProvider>();
+    final customs = provider.userAllergens
+        .where((a) => ![
+              'Melk', 'Ei', 'Gluten', 'Noten',
+              'Pinda', 'Soja', 'Vis', 'Schaaldieren',
+            ].contains(a))
+        .toList();
+    for (int i = 0; i < customs.length && i < 3; i++) {
+      _customControllers[i].text = customs[i];
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _customControllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _saveCustomAllergen(int index, String value, DagboekProvider provider) async {
+    final knownAllergens = [
+      'Melk', 'Ei', 'Gluten', 'Noten',
+      'Pinda', 'Soja', 'Vis', 'Schaaldieren',
+    ];
+    final currentCustoms = provider.userAllergens
+        .where((a) => !knownAllergens.contains(a))
+        .toList();
+
+    if (index < currentCustoms.length) {
+      final old = currentCustoms[index];
+      if (provider.userAllergens.contains(old)) {
+        await provider.toggleAllergen(old);
+      }
+    }
+
+    final trimmed = value.trim();
+    if (trimmed.isNotEmpty && !provider.userAllergens.contains(trimmed)) {
+      await provider.toggleAllergen(trimmed);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +75,6 @@ class ProfielScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const AppLogo(subtitle: 'Profiel'),
         centerTitle: true,
@@ -30,7 +83,14 @@ class ProfielScreen extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            const _ProfileHero(),
+            Consumer<DagboekProvider>(
+              builder: (context, provider, _) {
+                return _ProfileHero(
+                  demoEnabled: provider.isDemoDataEnabled,
+                  onToggleDemo: provider.toggleDemoData,
+                );
+              },
+            ),
             const SizedBox(height: 32),
             _buildSectionHeader(context, 'Mijn Allergiën', 'De app waarschuwt je bij deze stoffen'),
             const SizedBox(height: 16),
@@ -55,7 +115,7 @@ class ProfielScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: isSelected 
                                 ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1) 
-                                : Colors.white,
+                                : Theme.of(context).cardTheme.color,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isSelected 
@@ -94,29 +154,89 @@ class ProfielScreen extends StatelessWidget {
                 },
               ),
             ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Consumer<DagboekProvider>(
+                builder: (context, provider, child) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Eigen allergenen',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blueGrey[500],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      for (int i = 0; i < 3; i++)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: TextField(
+                            controller: _customControllers[i],
+                            textCapitalization: TextCapitalization.sentences,
+                            decoration: InputDecoration(
+                              hintText: 'Vrij veld ${i + 1}',
+                              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                              prefixIcon: Icon(Icons.edit_rounded, size: 18, color: Colors.grey[400]),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                              ),
+                            ),
+                            style: const TextStyle(fontSize: 14),
+                            onSubmitted: (value) => _saveCustomAllergen(i, value, provider),
+                            onTapOutside: (_) {
+                              FocusScope.of(context).unfocus();
+                              _saveCustomAllergen(i, _customControllers[i].text, provider);
+                            },
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
             const SizedBox(height: 32),
-            _buildSectionHeader(context, 'Abonnement', 'Beheer je aankopen'),
+            _buildSectionHeader(context, 'Weergave', 'Pas het uiterlijk aan'),
             const SizedBox(height: 8),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
               ),
-              child: ListTile(
-                leading: const Icon(Icons.restore_rounded, color: Color(0xFF6B8E5A)),
-                title: const Text('Aankopen Herstellen', style: TextStyle(fontWeight: FontWeight.w600)),
-                trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
-                onTap: () async {
-                   final scaffold = ScaffoldMessenger.of(context);
-                   scaffold.showSnackBar(const SnackBar(content: Text('Aankopen herstellen...')));
-                   final isSuccess = await PurchasesService.restorePurchases();
-                   if (isSuccess) {
-                     scaffold.showSnackBar(const SnackBar(content: Text('Aankopen succesvol hersteld!')));
-                   } else {
-                     scaffold.showSnackBar(const SnackBar(content: Text('Geen actief abonnement gevonden om te herstellen.')));
-                   }
+              child: Consumer<DagboekProvider>(
+                builder: (context, provider, _) {
+                  return SwitchListTile(
+                    secondary: Icon(
+                      provider.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                      color: const Color(0xFF6B8E5A),
+                    ),
+                    title: const Text('Donkere modus', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(
+                      provider.isDarkMode ? 'Aan' : 'Uit',
+                      style: TextStyle(fontSize: 12, color: Colors.blueGrey[400]),
+                    ),
+                    value: provider.isDarkMode,
+                    activeColor: const Color(0xFF6B8E5A),
+                    onChanged: (_) => provider.toggleDarkMode(),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  );
                 },
               ),
             ),
@@ -149,7 +269,13 @@ class ProfielScreen extends StatelessWidget {
 }
 
 class _ProfileHero extends StatelessWidget {
-  const _ProfileHero();
+  final bool demoEnabled;
+  final VoidCallback onToggleDemo;
+
+  const _ProfileHero({
+    required this.demoEnabled,
+    required this.onToggleDemo,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -186,17 +312,37 @@ class _ProfileHero extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 20),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Mijn Gezondheid',
+                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Persoonlijk Profiel',
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                'Mijn Gezondheid',
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              const Text(
+                'Demo data',
+                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
               ),
-              SizedBox(height: 4),
-              Text(
-                'Persoonlijk Profiel',
-                style: TextStyle(color: Colors.white70, fontSize: 14),
+              const SizedBox(height: 6),
+              Switch(
+                value: demoEnabled,
+                onChanged: (_) => onToggleDemo(),
+                activeColor: Colors.white,
+                activeTrackColor: Colors.white70,
+                inactiveThumbColor: Colors.white,
+                inactiveTrackColor: Colors.white38,
               ),
             ],
           ),

@@ -372,10 +372,28 @@ class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
           const SizedBox(height: 8),
           TextFormField(
             controller: _notitiesController,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: 'Schrijf hier je opmerkingen...',
+              hintStyle: TextStyle(color: Colors.grey[400]),
+              filled: true,
+              fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2D2D2D) : Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+              ),
+              prefixIcon: Icon(Icons.notes_rounded, color: Theme.of(context).colorScheme.primary),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
             maxLines: 3,
+            minLines: 2,
           ),
         ],
       ),
@@ -523,17 +541,6 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
     );
   }
 
-  final Map<String, bool> _locaties = {
-    'Gezicht': false,
-    'Handen': false,
-    'Armen': false,
-    'Benen': false,
-  };
-  final Map<String, bool> _klachten = {
-    'Jeuk': false,
-    'Pijn': false,
-    'Branderig': false,
-  };
   final Map<String, bool> _dagTriggers = {
     'Stress': false,
     'Zweet': false,
@@ -655,39 +662,6 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
         _buildMedicalSlider('Droogheid', _droogheid, (s) => setState(() => _droogheid = s), Colors.lightBlue[400]!),
         _buildMedicalSlider('Schilfering', _schilfering, (s) => setState(() => _schilfering = s), Colors.brown[300]!),
 
-        const SizedBox(height: 10),
-
-        // Optionele locaties
-        const Text('Locatie (optioneel)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: _locaties.keys.map((loc) {
-            return FilterChip(
-              label: Text(loc, style: const TextStyle(fontSize: 12)),
-              selected: _locaties[loc]!,
-              onSelected: (v) => setState(() => _locaties[loc] = v),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 10),
-
-        // Klachten
-        const Text('Klachten', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: _klachten.keys.map((k) {
-            return FilterChip(
-              label: Text(k, style: const TextStyle(fontSize: 12)),
-              selected: _klachten[k]!,
-              onSelected: (v) => setState(() => _klachten[k] = v),
-            );
-          }).toList(),
-        ),
-        
         const SizedBox(height: 16),
         
         // Medicatie toggle
@@ -727,17 +701,33 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
         const SizedBox(height: 12),
 
         // Notities
-        const Text('Notities (optioneel)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        const Text('Notities', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         TextFormField(
           controller: _notitiesController,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            isDense: true,
+          decoration: InputDecoration(
+            hintText: 'Schrijf hier je opmerkingen...',
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            filled: true,
+            fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2D2D2D) : Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+            ),
+            prefixIcon: Icon(Icons.notes_rounded, color: Theme.of(context).colorScheme.primary),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
           style: const TextStyle(fontSize: 13),
-          maxLines: 2,
+          maxLines: 3,
+          minLines: 2,
         ),
       ],
     );
@@ -745,16 +735,12 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
 
   Future<void> _voegToe() async {
     // Collect selected details to append to notes
-    final selectedLocaties = _locaties.entries.where((e) => e.value).map((e) => e.key).toList();
-    final selectedKlachten = _klachten.entries.where((e) => e.value).map((e) => e.key).toList();
     final selectedTriggers = _dagTriggers.entries.where((e) => e.value).map((e) => e.key).toList();
 
     final buffer = StringBuffer();
     if (_notitiesController.text.trim().isNotEmpty) {
       buffer.writeln(_notitiesController.text.trim());
     }
-    if (selectedLocaties.isNotEmpty) buffer.writeln('Locatie: ${selectedLocaties.join(', ')}');
-    if (selectedKlachten.isNotEmpty) buffer.writeln('Klachten: ${selectedKlachten.join(', ')}');
     if (selectedTriggers.isNotEmpty) buffer.writeln('Factoren: ${selectedTriggers.join(', ')}');
 
     final notitiesToSave = buffer.toString().trim();
@@ -792,8 +778,6 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
       _droogheid = 0;
       _schilfering = 0;
       _medicatieGebruikt = false;
-      _locaties.updateAll((key, value) => false);
-      _klachten.updateAll((key, value) => false);
       _dagTriggers.updateAll((key, value) => false);
       _gekozenDatum = DateTime.now();
     });

@@ -26,8 +26,14 @@ class DagboekProvider extends ChangeNotifier {
   static const String _initKey = 'dagboek_initialized';
   static const String _subscriptionKey = 'subscription_level';
   static const String _allergenKey = 'user_allergens';
+  static const String _darkModeKey = 'dark_mode';
+  static const String _demoEnabledKey = 'demo_data_enabled';
+  static const String _demoEntryIdsKey = 'demo_entry_ids';
 
   List<String> _userAllergens = [];
+  bool _isDarkMode = false;
+  bool _isDemoDataEnabled = true;
+  final Set<String> _demoEntryIds = {};
   
   // Mapping van veelvoorkomende voedingsmiddelen naar hun allergenen
   final Map<String, List<String>> _allergenMapping = {
@@ -93,12 +99,15 @@ class DagboekProvider extends ChangeNotifier {
     'pizza': ['Gluten', 'Melk'],
   };
 
-  List<DagboekEntry> get dagboekEntries => _dagboekEntries;
+  List<DagboekEntry> get dagboekEntries =>
+      _isDemoDataEnabled ? _dagboekEntries : _dagboekEntries.where((e) => !_isDemoEntry(e)).toList();
   List<EliminatieTest> get eliminatieTests => _eliminatieTests;
   AnalyseResultaat? get huidigAnalyseResultaat => _huidigAnalyseResultaat;
   bool get isAnalyseBezig => _isAnalyseBezig;
   SubscriptionLevel get subscriptionLevel => _subscriptionLevel;
   List<String> get userAllergens => _userAllergens;
+  bool get isDarkMode => _isDarkMode;
+  bool get isDemoDataEnabled => _isDemoDataEnabled;
   
   bool get isGratis => false;
   bool get isBasis => false;
@@ -192,6 +201,20 @@ class DagboekProvider extends ChangeNotifier {
       _userAllergens = prefs.getStringList(_allergenKey) ?? [];
       debugPrint('Allergenen geladen: $_userAllergens');
 
+      _isDarkMode = prefs.getBool(_darkModeKey) ?? false;
+      _isDemoDataEnabled = prefs.getBool(_demoEnabledKey) ?? true;
+      _demoEntryIds
+        ..clear()
+        ..addAll(prefs.getStringList(_demoEntryIdsKey) ?? const []);
+
+      // Backfill demo IDs for older installs where demo entries were stored
+      // without tracking which entries were demo.
+      if (_demoEntryIds.isEmpty &&
+          (_dagboekEntries.length == 13) &&
+          _containsVoorbeeldDataSignature()) {
+        _demoEntryIds.addAll(_dagboekEntries.map((e) => e.id));
+      }
+
     } catch (e) {
       debugPrint('❌ FOUT bij laden van opslag: $e');
     }
@@ -209,11 +232,27 @@ class DagboekProvider extends ChangeNotifier {
       await prefs.setString(_testStorageKey, testJsonString);
 
       await prefs.setStringList(_allergenKey, _userAllergens);
+      await prefs.setBool(_demoEnabledKey, _isDemoDataEnabled);
+      await prefs.setStringList(_demoEntryIdsKey, _demoEntryIds.toList());
       
       debugPrint('✅ Data opgeslagen');
     } catch (e) {
       debugPrint('❌ FOUT bij opslaan in opslag: $e');
     }
+  }
+
+  Future<void> toggleDarkMode() async {
+    _isDarkMode = !_isDarkMode;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_darkModeKey, _isDarkMode);
+    notifyListeners();
+  }
+
+  Future<void> toggleDemoData() async {
+    _isDemoDataEnabled = !_isDemoDataEnabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_demoEnabledKey, _isDemoDataEnabled);
+    notifyListeners();
   }
 
   // Allergeen management
@@ -227,8 +266,9 @@ class DagboekProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<String> checkForAllergens(String text) {
-    if (text.isEmpty || _userAllergens.isEmpty) return [];
+  List<String> checkForAllergens(String text, {List<String>? allergensOverride}) {
+    final activeAllergens = allergensOverride ?? _userAllergens;
+    if (text.isEmpty || activeAllergens.isEmpty) return [];
     
     final lowerText = text.toLowerCase();
     final detected = <String>{};
@@ -250,7 +290,7 @@ class DagboekProvider extends ChangeNotifier {
     }
 
     // Check directe matches met actieve allergenen
-    for (var allergeen in _userAllergens) {
+    for (var allergeen in activeAllergens) {
       final lowerA = allergeen.toLowerCase();
       if (lowerA == 'melk') {
         if (hasDairyMilk(lowerText)) detected.add(allergeen);
@@ -268,7 +308,7 @@ class DagboekProvider extends ChangeNotifier {
         }
 
         for (var a in allergenen) {
-          if (_userAllergens.contains(a)) {
+          if (activeAllergens.contains(a)) {
             detected.add(a);
           }
         }
@@ -301,7 +341,7 @@ class DagboekProvider extends ChangeNotifier {
   }
 
   void _voegVoedselEntryToe(VoedselEntry entry, DateTime datum) {
-    final index = _vindDagboekEntry(datum);
+    final index = _vindDagboekEntryUser(datum);
 
     if (index != null) {
       _dagboekEntries[index].voedselEntries.add(entry);
@@ -345,7 +385,7 @@ class DagboekProvider extends ChangeNotifier {
     );
 
     final datumVoorEntry = datum ?? DateTime.now();
-    final index = _vindDagboekEntry(datumVoorEntry);
+    final index = _vindDagboekEntryUser(datumVoorEntry);
 
     if (index != null) {
       // Vervang bestaande metrics voor deze dag
@@ -370,7 +410,8 @@ class DagboekProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _huidigAnalyseResultaat = await _analyseService.analyseerData(_dagboekEntries);
+      final allergenOnlyEntries = _buildAllergenOnlyEntries(dagboekEntries);
+      _huidigAnalyseResultaat = await _analyseService.analyseerData(allergenOnlyEntries);
     } catch (e) {
       debugPrint('Analyse fout: $e');
     } finally {
@@ -379,10 +420,49 @@ class DagboekProvider extends ChangeNotifier {
     }
   }
 
+  List<DagboekEntry> _buildAllergenOnlyEntries(List<DagboekEntry> source) {
+    // Only analyze allergens the user explicitly selected.
+    const fallbackAllergens = [
+      'Melk',
+      'Ei',
+      'Gluten',
+      'Noten',
+      'Pinda',
+      'Soja',
+      'Vis',
+      'Schaaldieren',
+    ];
+    final activeAllergens = _userAllergens.isEmpty ? fallbackAllergens : _userAllergens;
+
+    final result = <DagboekEntry>[];
+    for (final entry in source) {
+      final ingredientsText = entry.voedselEntries.expand((ve) => ve.ingredienten).join(' ');
+      final detected = checkForAllergens(ingredientsText, allergensOverride: activeAllergens);
+
+      result.add(
+        DagboekEntry(
+          datum: entry.datum,
+          voedselEntries: [
+            VoedselEntry(
+              categorie: VoedselCategorie.snack,
+              beschrijving: 'Allergenen',
+              ingredienten: detected,
+            ),
+          ],
+          gezondheidsMetrics: entry.gezondheidsMetrics,
+        ),
+      );
+    }
+    return result;
+  }
+
   // Verwijder dagboek entry
   Future<void> verwijderDagboekEntry(int index) async {
-    if (index >= 0 && index < _dagboekEntries.length) {
-      _dagboekEntries.removeAt(index);
+    final visible = dagboekEntries;
+    if (index >= 0 && index < visible.length) {
+      final id = visible[index].id;
+      _dagboekEntries.removeWhere((e) => e.id == id);
+      _demoEntryIds.remove(id);
       await _slaOpInOpslag();
       notifyListeners();
     }
@@ -408,7 +488,7 @@ class DagboekProvider extends ChangeNotifier {
     required bool medicatieGebruikt,
     String? notities,
   }) async {
-    final index = _vindDagboekEntry(datum);
+    final index = _vindDagboekEntryUser(datum);
     
     debugPrint('=== UPDATE GEZONDHEIDSMETRIC ===');
     debugPrint('Datum: $datum');
@@ -466,7 +546,7 @@ class DagboekProvider extends ChangeNotifier {
     required List<String> ingredienten,
     String? notities,
   }) async {
-    final dagIndex = _vindDagboekEntry(datum);
+    final dagIndex = _vindDagboekEntryUser(datum);
     
     if (dagIndex != null && 
         voedselIndex >= 0 && 
@@ -492,7 +572,7 @@ class DagboekProvider extends ChangeNotifier {
     required DateTime datum,
     required int voedselIndex,
   }) async {
-    final dagIndex = _vindDagboekEntry(datum);
+    final dagIndex = _vindDagboekEntryUser(datum);
     
     if (dagIndex != null && 
         voedselIndex >= 0 && 
@@ -597,11 +677,20 @@ class DagboekProvider extends ChangeNotifier {
     }
   }
   // Helper functies
-  int? _vindDagboekEntry(DateTime datum) {
+  bool _isDemoEntry(DagboekEntry entry) => _demoEntryIds.contains(entry.id);
+
+  int? _vindDagboekEntryAny(DateTime datum) {
     for (int i = 0; i < _dagboekEntries.length; i++) {
-      if (_isSameDay(_dagboekEntries[i].datum, datum)) {
-        return i;
-      }
+      if (_isSameDay(_dagboekEntries[i].datum, datum)) return i;
+    }
+    return null;
+  }
+
+  int? _vindDagboekEntryUser(DateTime datum) {
+    for (int i = 0; i < _dagboekEntries.length; i++) {
+      final e = _dagboekEntries[i];
+      if (_isDemoEntry(e)) continue;
+      if (_isSameDay(e.datum, datum)) return i;
     }
     return null;
   }
@@ -616,10 +705,23 @@ class DagboekProvider extends ChangeNotifier {
     _dagboekEntries.sort((a, b) => b.datum.compareTo(a.datum));
   }
 
+  bool _containsVoorbeeldDataSignature() {
+    bool has(String needle) {
+      for (final e in _dagboekEntries) {
+        for (final v in e.voedselEntries) {
+          if (v.beschrijving == needle) return true;
+        }
+      }
+      return false;
+    }
+
+    return has('Havermout met banaan') && has('Yoghurt met granola') && has('Toast met ei');
+  }
+
   // Krijg alle ingrediënten van een specifieke dag
   Set<String> getIngredientsForDay(DateTime datum) {
     final set = <String>{};
-    final index = _vindDagboekEntry(datum);
+    final index = _isDemoDataEnabled ? _vindDagboekEntryAny(datum) : _vindDagboekEntryUser(datum);
     
     if (index != null) {
       for (final voedselEntry in _dagboekEntries[index].voedselEntries) {
@@ -631,7 +733,7 @@ class DagboekProvider extends ChangeNotifier {
   }
 
   DagboekEntry? getEntryForDate(DateTime datum) {
-    final index = _vindDagboekEntry(datum);
+    final index = _isDemoDataEnabled ? _vindDagboekEntryAny(datum) : _vindDagboekEntryUser(datum);
     if (index != null) {
       return _dagboekEntries[index];
     }
@@ -641,7 +743,7 @@ class DagboekProvider extends ChangeNotifier {
   // Krijg unieke ingrediënten uit het hele dagboek
   List<String> getAllIngredients() {
     final set = <String>{};
-    for (final entry in _dagboekEntries) {
+    for (final entry in dagboekEntries) {
       for (final voedselEntry in entry.voedselEntries) {
         set.addAll(voedselEntry.ingredienten);
       }
@@ -807,6 +909,10 @@ class DagboekProvider extends ChangeNotifier {
     }
 
     _sorteerdagboekEntries();
+    _demoEntryIds
+      ..clear()
+      ..addAll(_dagboekEntries.map((e) => e.id));
+    _isDemoDataEnabled = true;
   }
 
   String _createBeschrijving(List<String> ingredienten) {

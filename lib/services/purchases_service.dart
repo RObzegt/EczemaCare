@@ -83,13 +83,29 @@ class PurchasesService {
           pkgDetails.add('${entry.key}(pkgs=${o.availablePackages.length},$pIds)');
         }
 
-        lastOfferingsDebug = 'all=${allIds}, current=$currentId, '
+        lastOfferingsDebug = 'all=$allIds, current=$currentId, '
             'currentPkgs=$currentPkgs, details=$pkgDetails';
         debugPrint('getOfferings attempt $attempt: $lastOfferingsDebug');
 
+        // 1️⃣ Ideaal: gebruik de "current" offering
         if (hasCurrent && currentPkgs > 0) {
           return offerings.current!.availablePackages;
         }
+
+        // 2️⃣ Fallback: zoek de eerste offering met packages
+        for (final entry in offerings.all.entries) {
+          final pkgs = entry.value.availablePackages;
+          if (pkgs.isNotEmpty) {
+            debugPrint(
+                'getOfferings: current leeg, fallback naar offering "${entry.key}" met ${pkgs.length} package(s)');
+            lastOfferingsDebug =
+                '[FALLBACK offering=${entry.key}] $lastOfferingsDebug';
+            return pkgs;
+          }
+        }
+
+        // 3️⃣ Alles leeg — geen producten gevonden, retry
+        debugPrint('getOfferings attempt $attempt: geen packages gevonden, retry...');
       } on PlatformException catch (e) {
         lastOfferingsDebug = 'PlatformException: ${e.code} ${e.message}';
         debugPrint('getOfferings attempt $attempt error: $e');

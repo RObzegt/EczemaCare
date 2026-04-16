@@ -65,8 +65,17 @@ class _PaywallScreenState extends State<PaywallScreen> {
       final offerDebug = PurchasesService.lastOfferingsDebug ?? 'n/a';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Fout: $errorDetail\nOfferings: $offerDebug'),
-          duration: const Duration(seconds: 30),
+          content: SelectableText(
+            'Fout: $errorDetail\n\nOfferings debug:\n$offerDebug',
+            style: const TextStyle(fontSize: 11),
+          ),
+          backgroundColor: const Color(0xFF1E293B),
+          duration: const Duration(seconds: 60),
+          action: SnackBarAction(
+            label: 'Sluiten',
+            textColor: const Color(0xFF6B8E5A),
+            onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+          ),
         ),
       );
     }

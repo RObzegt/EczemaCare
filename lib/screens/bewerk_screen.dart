@@ -28,6 +28,13 @@ class _BewerkScreenState extends State<BewerkScreen> {
   late bool _medicatieGebruikt;
   
   final TextEditingController _notitiesController = TextEditingController();
+  final Map<String, bool> _dagTriggers = {
+    'Stress': false,
+    'Zweet': false,
+    'Koud': false,
+    'Warmte': false,
+    'Dieren': false,
+  };
   
   @override
   void initState() {
@@ -45,7 +52,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
       _droogheid = metric.droogheid.toDouble();
       _schilfering = metric.schilfering.toDouble();
       _medicatieGebruikt = metric.medicatieGebruikt;
-      _notitiesController.text = metric.notities ?? '';
+      _parseNotities(metric.notities ?? '');
     } else {
       _eczeemErnstig = 5.0;
       _eczeemJeuk = 0.0;
@@ -57,6 +64,34 @@ class _BewerkScreenState extends State<BewerkScreen> {
       _schilfering = 0.0;
       _medicatieGebruikt = false;
     }
+  }
+
+  void _parseNotities(String raw) {
+    final lines = raw.split('\n');
+    final freeText = <String>[];
+
+    for (final line in lines) {
+      if (line.startsWith('Factoren: ')) {
+        for (final v in line.substring(10).split(', ')) {
+          if (_dagTriggers.containsKey(v.trim())) _dagTriggers[v.trim()] = true;
+        }
+      } else {
+        freeText.add(line);
+      }
+    }
+    _notitiesController.text = freeText.join('\n').trim();
+  }
+
+  String _buildNotities() {
+    final buffer = StringBuffer();
+    if (_notitiesController.text.trim().isNotEmpty) {
+      buffer.writeln(_notitiesController.text.trim());
+    }
+    final selectedTriggers = _dagTriggers.entries.where((e) => e.value).map((e) => e.key).toList();
+
+    if (selectedTriggers.isNotEmpty) buffer.writeln('Factoren: ${selectedTriggers.join(', ')}');
+
+    return buffer.toString().trim();
   }
 
   @override
@@ -81,7 +116,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
       droogheid: _droogheid.round(),
       schilfering: _schilfering.round(),
       medicatieGebruikt: _medicatieGebruikt,
-      notities: _notitiesController.text.isEmpty ? null : _notitiesController.text,
+      notities: _buildNotities().isEmpty ? null : _buildNotities(),
     );
 
     final updatedEntry = provider.getEntryForDate(widget.entry.datum);
@@ -622,6 +657,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
               onChanged: (v) => setState(() => _schilfering = v),
             ),
 
+            const SizedBox(height: 10),
             const SizedBox(height: 8),
             CheckboxListTile(
               contentPadding: EdgeInsets.zero,
@@ -644,17 +680,49 @@ class _BewerkScreenState extends State<BewerkScreen> {
               onChanged: (value) => setState(() => _slaapKwaliteit = value),
             ),
 
+            const SizedBox(height: 16),
+            const Text('Dagelijkse omgevingsfactoren', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: _dagTriggers.keys.map((t) {
+                return FilterChip(
+                  label: Text(t, style: const TextStyle(fontSize: 12)),
+                  selected: _dagTriggers[t]!,
+                  onSelected: (v) => setState(() => _dagTriggers[t] = v),
+                );
+              }).toList(),
+            ),
+
             const Divider(height: 20),
 
-                  // Notes (compact)
+                  const Text('Notities', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
                   TextField(
                     controller: _notitiesController,
-                    decoration: const InputDecoration(
-                      labelText: 'Notities',
-                      hintText: 'Extra opmerkingen...',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      hintText: 'Schrijf hier je opmerkingen...',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      filled: true,
+                      fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2D2D2D) : Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                      ),
+                      prefixIcon: Icon(Icons.notes_rounded, color: Theme.of(context).colorScheme.primary),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
-                    maxLines: 1,
+                    maxLines: 3,
+                    minLines: 2,
                   ),
                   const SizedBox(height: 8),
 
