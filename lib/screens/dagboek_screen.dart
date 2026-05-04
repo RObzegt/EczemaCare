@@ -312,13 +312,92 @@ class _DagboekScreenState extends State<DagboekScreen> {
     );
   }
 
+  void _showAppUitlegDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hoe werkt de app?'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'TriggerTrace helpt je eczeem en voeding in beeld te brengen, zodat je beter ziet wat bij jouw klachten past.',
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.4,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _uitlegSectie(
+                context,
+                'Dagboek',
+                'Hier zie je je dagen in het overzicht. Per dag noteer je wat je eet (inclusief ingrediënten), je huid en slaap. Zo bouw je een tijdlijn om patronen te herkennen.',
+              ),
+              _uitlegSectie(
+                context,
+                'Eliminatie',
+                'Start een test om bepaalde ingrediënten een tijd te vermijden en ze daarna gecontroleerd weer toe te voegen (provocatie). Zo kun je nagaan of iets je eczeem beïnvloedt.',
+              ),
+              _uitlegSectie(
+                context,
+                'Analyse',
+                'Op basis van je ingevoerde gegevens zoekt de app samenhang tussen allergenen en je symptomen, zodat je sneller richting krijgt bij wat je probeert.',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Sluiten'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _uitlegSectie(BuildContext context, String titel, String tekst) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            titel,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            tekst,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.4,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const AppLogo(subtitle: 'Dagboek'),
         actions: [
-
+          IconButton(
+            icon: const Icon(Icons.info_outline_rounded),
+            tooltip: 'Uitleg over de app',
+            onPressed: () => _showAppUitlegDialog(context),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: IconButton(

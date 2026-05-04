@@ -690,13 +690,44 @@ class EliminatieScreen extends StatelessWidget {
   void _showStartTestDialog(BuildContext context) {
     final notesController = TextEditingController();
     final durationController = TextEditingController(text: '21');
+    final custom1Controller = TextEditingController();
+    final custom2Controller = TextEditingController();
+    final custom3Controller = TextEditingController();
     final commonAllergens = ['Melk', 'Ei', 'Gluten', 'Noten', 'Pinda', 'Soja', 'Vis', 'Schaaldieren', 'Suiker', 'Lactose'];
     final selectedAllergens = <String>{};
+
+    bool _hasSelection() {
+      if (selectedAllergens.isNotEmpty) return true;
+      return [
+            custom1Controller.text,
+            custom2Controller.text,
+            custom3Controller.text,
+          ].any((t) => t.trim().isNotEmpty);
+    }
+
+    List<String> _collectAllergenen() {
+      final set = <String>{...selectedAllergens};
+      for (final c in [custom1Controller, custom2Controller, custom3Controller]) {
+        final s = c.text.trim();
+        if (s.isEmpty) continue;
+        bool duplicate = false;
+        for (final existing in set) {
+          if (existing.toLowerCase() == s.toLowerCase()) {
+            duplicate = true;
+            break;
+          }
+        }
+        if (!duplicate) set.add(s);
+      }
+      return set.toList();
+    }
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
+          void onAnyCustomChanged() => setDialogState(() {});
+
           return AlertDialog(
             title: const Text('Nieuwe Eliminatie Test'),
             content: SingleChildScrollView(
@@ -729,6 +760,48 @@ class EliminatieScreen extends StatelessWidget {
                       );
                     }).toList(),
                   ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Eigen ingrediënten (optioneel)',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blueGrey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: custom1Controller,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(
+                      hintText: 'Vrij veld 1',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onChanged: (_) => onAnyCustomChanged(),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: custom2Controller,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(
+                      hintText: 'Vrij veld 2',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onChanged: (_) => onAnyCustomChanged(),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: custom3Controller,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(
+                      hintText: 'Vrij veld 3',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onChanged: (_) => onAnyCustomChanged(),
+                  ),
                   const SizedBox(height: 24),
                   const Divider(),
                   const SizedBox(height: 16),
@@ -758,12 +831,14 @@ class EliminatieScreen extends StatelessWidget {
                 child: const Text('Annuleren'),
               ),
               ElevatedButton(
-                onPressed: selectedAllergens.isEmpty 
+                onPressed: !_hasSelection()
                   ? null 
                   : () {
+                    final lijst = _collectAllergenen();
+                    if (lijst.isEmpty) return;
                     final dagen = int.tryParse(durationController.text) ?? 21;
                     context.read<DagboekProvider>().startEliminatieTest(
-                      selectedAllergens.toList(),
+                      lijst,
                       doelDagen: dagen,
                       notities: notesController.text,
                     );
@@ -779,7 +854,13 @@ class EliminatieScreen extends StatelessWidget {
           );
         },
       ),
-    );
+    ).then((_) {
+      notesController.dispose();
+      durationController.dispose();
+      custom1Controller.dispose();
+      custom2Controller.dispose();
+      custom3Controller.dispose();
+    });
   }
 
   void _showInfoDialog(BuildContext context) {

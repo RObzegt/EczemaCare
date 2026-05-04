@@ -83,14 +83,7 @@ class _ProfielScreenState extends State<ProfielScreen> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            Consumer<DagboekProvider>(
-              builder: (context, provider, _) {
-                return _ProfileHero(
-                  demoEnabled: provider.isDemoDataEnabled,
-                  onToggleDemo: provider.toggleDemoData,
-                );
-              },
-            ),
+            const _ProfileHero(),
             const SizedBox(height: 32),
             _buildSectionHeader(context, 'Mijn Allergiën', 'De app waarschuwt je bij deze stoffen'),
             const SizedBox(height: 16),
@@ -269,13 +262,7 @@ class _ProfielScreenState extends State<ProfielScreen> {
 }
 
 class _ProfileHero extends StatelessWidget {
-  final bool demoEnabled;
-  final VoidCallback onToggleDemo;
-
-  const _ProfileHero({
-    required this.demoEnabled,
-    required this.onToggleDemo,
-  });
+  const _ProfileHero();
 
   @override
   Widget build(BuildContext context) {
@@ -327,24 +314,6 @@ class _ProfileHero extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              const Text(
-                'Demo data',
-                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 6),
-              Switch(
-                value: demoEnabled,
-                onChanged: (_) => onToggleDemo(),
-                activeColor: Colors.white,
-                activeTrackColor: Colors.white70,
-                inactiveThumbColor: Colors.white,
-                inactiveTrackColor: Colors.white38,
-              ),
-            ],
           ),
         ],
       ),

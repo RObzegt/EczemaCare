@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'dart:math';
 import '../models/dagboek_entry.dart';
 import '../models/voedsel_entry.dart';
 import '../models/voedsel_categorie.dart';
@@ -23,17 +22,12 @@ class DagboekProvider extends ChangeNotifier {
   final AIAnalyseService _analyseService = AIAnalyseService();
   static const String _storageKey = 'dagboek_entries';
   static const String _testStorageKey = 'eliminatie_tests';
-  static const String _initKey = 'dagboek_initialized';
   static const String _subscriptionKey = 'subscription_level';
   static const String _allergenKey = 'user_allergens';
   static const String _darkModeKey = 'dark_mode';
-  static const String _demoEnabledKey = 'demo_data_enabled';
-  static const String _demoEntryIdsKey = 'demo_entry_ids';
 
   List<String> _userAllergens = [];
   bool _isDarkMode = false;
-  bool _isDemoDataEnabled = true;
-  final Set<String> _demoEntryIds = {};
   
   // Mapping van veelvoorkomende voedingsmiddelen naar hun allergenen
   final Map<String, List<String>> _allergenMapping = {
@@ -99,15 +93,13 @@ class DagboekProvider extends ChangeNotifier {
     'pizza': ['Gluten', 'Melk'],
   };
 
-  List<DagboekEntry> get dagboekEntries =>
-      _isDemoDataEnabled ? _dagboekEntries : _dagboekEntries.where((e) => !_isDemoEntry(e)).toList();
+  List<DagboekEntry> get dagboekEntries => _dagboekEntries;
   List<EliminatieTest> get eliminatieTests => _eliminatieTests;
   AnalyseResultaat? get huidigAnalyseResultaat => _huidigAnalyseResultaat;
   bool get isAnalyseBezig => _isAnalyseBezig;
   SubscriptionLevel get subscriptionLevel => _subscriptionLevel;
   List<String> get userAllergens => _userAllergens;
   bool get isDarkMode => _isDarkMode;
-  bool get isDemoDataEnabled => _isDemoDataEnabled;
   
   bool get isGratis => false;
   bool get isBasis => false;
@@ -140,25 +132,9 @@ class DagboekProvider extends ChangeNotifier {
     
     debugPrint('After loading from storage, entries count: ${_dagboekEntries.length}');
     
-    // Alleen sample data laden als nog nooit geïnitialiseerd
-    if (_dagboekEntries.isEmpty) {
-      final prefs = await SharedPreferences.getInstance();
-      final wasGeinitialiseerd = prefs.getBool(_initKey) ?? false;
-      
-      if (!wasGeinitialiseerd) {
-        debugPrint('Eerste keer opstarten - laden sample data');
-        _laadVoorbeeldData();
-        await _slaOpInOpslag();
-        await prefs.setBool(_initKey, true);
-      } else {
-        debugPrint('App al geïnitialiseerd maar geen data - gebruiker heeft mogelijk alles verwijderd');
-      }
-    } else {
-      // Print first entry health data for debugging
-      if (_dagboekEntries.isNotEmpty && _dagboekEntries.first.gezondheidsMetrics.isNotEmpty) {
-        final m = _dagboekEntries.first.gezondheidsMetrics.first;
-        debugPrint('First entry loaded - Eczeem Ernstig: ${m.eczeemErnstig}, Mild: ${m.eczeemMild}, Geen: ${m.geenEczeem}');
-      }
+    if (_dagboekEntries.isNotEmpty && _dagboekEntries.first.gezondheidsMetrics.isNotEmpty) {
+      final m = _dagboekEntries.first.gezondheidsMetrics.first;
+      debugPrint('First entry loaded - Eczeem Ernstig: ${m.eczeemErnstig}, Mild: ${m.eczeemMild}, Geen: ${m.geenEczeem}');
     }
     
     notifyListeners();
@@ -202,22 +178,50 @@ class DagboekProvider extends ChangeNotifier {
       debugPrint('Allergenen geladen: $_userAllergens');
 
       _isDarkMode = prefs.getBool(_darkModeKey) ?? false;
-      _isDemoDataEnabled = prefs.getBool(_demoEnabledKey) ?? true;
-      _demoEntryIds
-        ..clear()
-        ..addAll(prefs.getStringList(_demoEntryIdsKey) ?? const []);
 
-      // Backfill demo IDs for older installs where demo entries were stored
-      // without tracking which entries were demo.
-      if (_demoEntryIds.isEmpty &&
-          (_dagboekEntries.length == 13) &&
-          _containsVoorbeeldDataSignature()) {
-        _demoEntryIds.addAll(_dagboekEntries.map((e) => e.id));
-      }
-
+      await _verwijderOudeDemoData(prefs);
     } catch (e) {
       debugPrint('❌ FOUT bij laden van opslag: $e');
     }
+  }
+
+  /// Verwijdert eenmalig opgeslagen voorbeeld-demo uit oudere app-versies.
+  Future<void> _verwijderOudeDemoData(SharedPreferences prefs) async {
+    const legacyDemoIdsKey = 'demo_entry_ids';
+    const legacyDemoEnabledKey = 'demo_data_enabled';
+
+    final storedIds = prefs.getStringList(legacyDemoIdsKey) ?? const <String>[];
+    final idsToRemove = <String>{...storedIds};
+
+    if (idsToRemove.isEmpty &&
+        _dagboekEntries.length == 13 &&
+        _heeftVoorbeeldDataHandtekening()) {
+      idsToRemove.addAll(_dagboekEntries.map((e) => e.id));
+    }
+
+    if (idsToRemove.isNotEmpty) {
+      _dagboekEntries.removeWhere((e) => idsToRemove.contains(e.id));
+      _sorteerdagboekEntries();
+      final jsonData = _dagboekEntries.map((e) => e.toJson()).toList();
+      await prefs.setString(_storageKey, jsonEncode(jsonData));
+      debugPrint('Oude demo-/voorbeelddata verwijderd (${idsToRemove.length} dagboekitems)');
+    }
+
+    await prefs.remove(legacyDemoEnabledKey);
+    await prefs.remove(legacyDemoIdsKey);
+  }
+
+  bool _heeftVoorbeeldDataHandtekening() {
+    bool has(String needle) {
+      for (final e in _dagboekEntries) {
+        for (final v in e.voedselEntries) {
+          if (v.beschrijving == needle) return true;
+        }
+      }
+      return false;
+    }
+
+    return has('Havermout met banaan') && has('Yoghurt met granola') && has('Toast met ei');
   }
 
   Future<void> _slaOpInOpslag() async {
@@ -232,8 +236,6 @@ class DagboekProvider extends ChangeNotifier {
       await prefs.setString(_testStorageKey, testJsonString);
 
       await prefs.setStringList(_allergenKey, _userAllergens);
-      await prefs.setBool(_demoEnabledKey, _isDemoDataEnabled);
-      await prefs.setStringList(_demoEntryIdsKey, _demoEntryIds.toList());
       
       debugPrint('✅ Data opgeslagen');
     } catch (e) {
@@ -245,13 +247,6 @@ class DagboekProvider extends ChangeNotifier {
     _isDarkMode = !_isDarkMode;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_darkModeKey, _isDarkMode);
-    notifyListeners();
-  }
-
-  Future<void> toggleDemoData() async {
-    _isDemoDataEnabled = !_isDemoDataEnabled;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_demoEnabledKey, _isDemoDataEnabled);
     notifyListeners();
   }
 
@@ -341,7 +336,7 @@ class DagboekProvider extends ChangeNotifier {
   }
 
   void _voegVoedselEntryToe(VoedselEntry entry, DateTime datum) {
-    final index = _vindDagboekEntryUser(datum);
+    final index = _vindDagboekIndexVoorDatum(datum);
 
     if (index != null) {
       _dagboekEntries[index].voedselEntries.add(entry);
@@ -385,7 +380,7 @@ class DagboekProvider extends ChangeNotifier {
     );
 
     final datumVoorEntry = datum ?? DateTime.now();
-    final index = _vindDagboekEntryUser(datumVoorEntry);
+    final index = _vindDagboekIndexVoorDatum(datumVoorEntry);
 
     if (index != null) {
       // Vervang bestaande metrics voor deze dag
@@ -462,7 +457,6 @@ class DagboekProvider extends ChangeNotifier {
     if (index >= 0 && index < visible.length) {
       final id = visible[index].id;
       _dagboekEntries.removeWhere((e) => e.id == id);
-      _demoEntryIds.remove(id);
       await _slaOpInOpslag();
       notifyListeners();
     }
@@ -488,7 +482,7 @@ class DagboekProvider extends ChangeNotifier {
     required bool medicatieGebruikt,
     String? notities,
   }) async {
-    final index = _vindDagboekEntryUser(datum);
+    final index = _vindDagboekIndexVoorDatum(datum);
     
     debugPrint('=== UPDATE GEZONDHEIDSMETRIC ===');
     debugPrint('Datum: $datum');
@@ -546,7 +540,7 @@ class DagboekProvider extends ChangeNotifier {
     required List<String> ingredienten,
     String? notities,
   }) async {
-    final dagIndex = _vindDagboekEntryUser(datum);
+    final dagIndex = _vindDagboekIndexVoorDatum(datum);
     
     if (dagIndex != null && 
         voedselIndex >= 0 && 
@@ -572,7 +566,7 @@ class DagboekProvider extends ChangeNotifier {
     required DateTime datum,
     required int voedselIndex,
   }) async {
-    final dagIndex = _vindDagboekEntryUser(datum);
+    final dagIndex = _vindDagboekIndexVoorDatum(datum);
     
     if (dagIndex != null && 
         voedselIndex >= 0 && 
@@ -677,20 +671,9 @@ class DagboekProvider extends ChangeNotifier {
     }
   }
   // Helper functies
-  bool _isDemoEntry(DagboekEntry entry) => _demoEntryIds.contains(entry.id);
-
-  int? _vindDagboekEntryAny(DateTime datum) {
+  int? _vindDagboekIndexVoorDatum(DateTime datum) {
     for (int i = 0; i < _dagboekEntries.length; i++) {
       if (_isSameDay(_dagboekEntries[i].datum, datum)) return i;
-    }
-    return null;
-  }
-
-  int? _vindDagboekEntryUser(DateTime datum) {
-    for (int i = 0; i < _dagboekEntries.length; i++) {
-      final e = _dagboekEntries[i];
-      if (_isDemoEntry(e)) continue;
-      if (_isSameDay(e.datum, datum)) return i;
     }
     return null;
   }
@@ -705,23 +688,10 @@ class DagboekProvider extends ChangeNotifier {
     _dagboekEntries.sort((a, b) => b.datum.compareTo(a.datum));
   }
 
-  bool _containsVoorbeeldDataSignature() {
-    bool has(String needle) {
-      for (final e in _dagboekEntries) {
-        for (final v in e.voedselEntries) {
-          if (v.beschrijving == needle) return true;
-        }
-      }
-      return false;
-    }
-
-    return has('Havermout met banaan') && has('Yoghurt met granola') && has('Toast met ei');
-  }
-
   // Krijg alle ingrediënten van een specifieke dag
   Set<String> getIngredientsForDay(DateTime datum) {
     final set = <String>{};
-    final index = _isDemoDataEnabled ? _vindDagboekEntryAny(datum) : _vindDagboekEntryUser(datum);
+    final index = _vindDagboekIndexVoorDatum(datum);
     
     if (index != null) {
       for (final voedselEntry in _dagboekEntries[index].voedselEntries) {
@@ -733,7 +703,7 @@ class DagboekProvider extends ChangeNotifier {
   }
 
   DagboekEntry? getEntryForDate(DateTime datum) {
-    final index = _isDemoDataEnabled ? _vindDagboekEntryAny(datum) : _vindDagboekEntryUser(datum);
+    final index = _vindDagboekIndexVoorDatum(datum);
     if (index != null) {
       return _dagboekEntries[index];
     }
@@ -751,174 +721,5 @@ class DagboekProvider extends ChangeNotifier {
     final result = set.toList();
     result.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     return result;
-  }
-
-  // Voorbeelddata
-  void _laadVoorbeeldData() {
-    final vandaag = DateTime.now();
-    final random = Random();
-
-    // Ingrediënten lijsten
-    final ontbijtIngr = [
-      ["Haver", "Melk", "Banaan"],
-      ["Yoghurt", "Melk", "Granola"],
-      ["Brood", "Ei", "Boter"],
-      ["Haver", "Aardbeien", "Honing"],
-      ["Toast", "Jam", "Boter"],
-      ["Pannenkoekenbeslag", "Melk", "Ei"],
-      ["Havermout", "Kokosmelk", "Noten"],
-    ];
-
-    final dinerIngr = [
-      ["Kip", "Rijst", "Broccoli"],
-      ["Pasta", "Tomatensaus", "Kaas"],
-      ["Zalm", "Aardappelen", "Sperziebonen"],
-      ["Rundvlees", "Wortels", "Ui"],
-      ["Kalkoen", "Wilde rijst", "Paddenstoelen"],
-      ["Tofu", "Brocoli", "Sesamolie"],
-      ["Vis", "Groenten", "Citroensap"],
-      ["Lamsvlees", "Aardappelen", "Knoflook"],
-    ];
-
-    // Dag 1 (vandaag)
-    _dagboekEntries.add(DagboekEntry(
-      datum: vandaag,
-      voedselEntries: [
-        VoedselEntry(
-          categorie: VoedselCategorie.ontbijt,
-          beschrijving: "Havermout met banaan",
-          ingredienten: ["Haver", "Banaan", "Melk"],
-        ),
-        VoedselEntry(
-          categorie: VoedselCategorie.lunch,
-          beschrijving: "Salade met kip",
-          ingredienten: ["Sla", "Kip", "Tomaat"],
-        ),
-      ],
-        gezondheidsMetrics: [
-        GezondheidsMetric(
-          eczeemErnstig: 2,
-          eczeemJeuken: 3,
-          eczeemMild: 7,
-          slaapKwaliteit: 8,
-          geenEczeem: 3,
-        ),
-      ],
-    ));
-
-    // Dag 2 (gisteren) - Hoog eczeem voor verificatie
-    _dagboekEntries.add(DagboekEntry(
-      datum: vandaag.subtract(const Duration(days: 1)),
-      voedselEntries: [
-        VoedselEntry(
-          categorie: VoedselCategorie.ontbijt,
-          beschrijving: "Yoghurt met granola",
-          ingredienten: ["Yoghurt", "Granola", "Honing"],
-        ),
-        VoedselEntry(
-          categorie: VoedselCategorie.diner,
-          beschrijving: "Pasta met tomatensaus",
-          ingredienten: ["Pasta", "Tomaat", "Basilicum"],
-        ),
-      ],
-        gezondheidsMetrics: [
-        GezondheidsMetric(
-          eczeemErnstig: 10,  // TEST: Moet nu ook als 10 op de grafiek verschijnen!
-          eczeemJeuken: 9,
-          eczeemMild: 1,
-          slaapKwaliteit: 2,
-          geenEczeem: 0,
-        ),
-      ],
-    ));
-
-    // Dag 3 (2 dagen geleden)
-    _dagboekEntries.add(DagboekEntry(
-      datum: vandaag.subtract(const Duration(days: 2)),
-      voedselEntries: [
-        VoedselEntry(
-          categorie: VoedselCategorie.ontbijt,
-          beschrijving: "Toast met ei",
-          ingredienten: ["Brood", "Ei"],
-        ),
-        VoedselEntry(
-          categorie: VoedselCategorie.snack,
-          beschrijving: "Appel",
-          ingredienten: ["Appel"],
-        ),
-        VoedselEntry(
-          categorie: VoedselCategorie.diner,
-          beschrijving: "Rijst met groenten",
-          ingredienten: ["Rijst", "Broccoli", "Wortel"],
-        ),
-      ],
-        gezondheidsMetrics: [
-        GezondheidsMetric(
-          eczeemErnstig: 1,
-          eczeemJeuken: 2,
-          eczeemMild: 8,
-          slaapKwaliteit: 7,
-          geenEczeem: 2,
-        ),
-      ],
-    ));
-
-    // 10 willekeurige dagen met ontbijt en diner
-    for (int i = 3; i < 13; i++) {
-      final datum = vandaag.subtract(Duration(days: i));
-      final ontbijtIdx = random.nextInt(ontbijtIngr.length);
-      final dinerIdx = random.nextInt(dinerIngr.length);
-
-      // Random eczema waarden (hoger met melk/zuivel, lager zonder)
-      final heeftMelk = ontbijtIngr[ontbijtIdx].contains("Melk") ||
-          ontbijtIngr[ontbijtIdx].contains("Yoghurt") ||
-          dinerIngr[dinerIdx].contains("Melk");
-      
-      final eczeemErnstig = heeftMelk 
-          ? 4 + random.nextInt(4)  // 4-7 met melk
-          : 1 + random.nextInt(3); // 1-3 zonder melk
-      
-      final eczeemJeuken = heeftMelk 
-          ? 5 + random.nextInt(3)  // 5-7 met melk
-          : 1 + random.nextInt(3); // 1-3 zonder melk
-
-      _dagboekEntries.add(DagboekEntry(
-        datum: datum,
-        voedselEntries: [
-          VoedselEntry(
-            categorie: VoedselCategorie.ontbijt,
-            beschrijving: _createBeschrijving(ontbijtIngr[ontbijtIdx]),
-            ingredienten: ontbijtIngr[ontbijtIdx],
-          ),
-          VoedselEntry(
-            categorie: VoedselCategorie.diner,
-            beschrijving: _createBeschrijving(dinerIngr[dinerIdx]),
-            ingredienten: dinerIngr[dinerIdx],
-          ),
-        ],
-        gezondheidsMetrics: [
-          GezondheidsMetric(
-            eczeemErnstig: eczeemErnstig,
-            eczeemJeuken: eczeemJeuken,
-            eczeemMild: 3 + random.nextInt(6),
-            slaapKwaliteit: 4 + random.nextInt(5),
-            geenEczeem: 2 + random.nextInt(6),
-          ),
-        ],
-      ));
-    }
-
-    _sorteerdagboekEntries();
-    _demoEntryIds
-      ..clear()
-      ..addAll(_dagboekEntries.map((e) => e.id));
-    _isDemoDataEnabled = true;
-  }
-
-  String _createBeschrijving(List<String> ingredienten) {
-    if (ingredienten.length >= 2) {
-      return "${ingredienten[0]} met ${ingredienten.sublist(1).join(', ')}";
-    }
-    return ingredienten.first;
   }
 }

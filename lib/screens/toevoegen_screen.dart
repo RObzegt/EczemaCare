@@ -542,11 +542,9 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
   }
 
   final Map<String, bool> _dagTriggers = {
-    'Stress': false,
     'Zweet': false,
     'Koud': false,
     'Warmte': false,
-    'Dieren': false,
   };
   final _notitiesController = TextEditingController();
   DateTime _gekozenDatum = DateTime.now();

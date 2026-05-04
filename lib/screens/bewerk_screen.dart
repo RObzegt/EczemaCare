@@ -29,11 +29,9 @@ class _BewerkScreenState extends State<BewerkScreen> {
   
   final TextEditingController _notitiesController = TextEditingController();
   final Map<String, bool> _dagTriggers = {
-    'Stress': false,
     'Zweet': false,
     'Koud': false,
     'Warmte': false,
-    'Dieren': false,
   };
   
   @override
