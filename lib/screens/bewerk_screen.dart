@@ -28,11 +28,6 @@ class _BewerkScreenState extends State<BewerkScreen> {
   late bool _medicatieGebruikt;
   
   final TextEditingController _notitiesController = TextEditingController();
-  final Map<String, bool> _dagTriggers = {
-    'Zweet': false,
-    'Koud': false,
-    'Warmte': false,
-  };
   
   @override
   void initState() {
@@ -65,32 +60,15 @@ class _BewerkScreenState extends State<BewerkScreen> {
   }
 
   void _parseNotities(String raw) {
-    final lines = raw.split('\n');
-    final freeText = <String>[];
-
-    for (final line in lines) {
-      if (line.startsWith('Factoren: ')) {
-        for (final v in line.substring(10).split(', ')) {
-          if (_dagTriggers.containsKey(v.trim())) _dagTriggers[v.trim()] = true;
-        }
-      } else {
-        freeText.add(line);
-      }
-    }
-    _notitiesController.text = freeText.join('\n').trim();
+    final freeText = raw
+        .split('\n')
+        .where((line) => !line.startsWith('Factoren: '))
+        .join('\n')
+        .trim();
+    _notitiesController.text = freeText;
   }
 
-  String _buildNotities() {
-    final buffer = StringBuffer();
-    if (_notitiesController.text.trim().isNotEmpty) {
-      buffer.writeln(_notitiesController.text.trim());
-    }
-    final selectedTriggers = _dagTriggers.entries.where((e) => e.value).map((e) => e.key).toList();
-
-    if (selectedTriggers.isNotEmpty) buffer.writeln('Factoren: ${selectedTriggers.join(', ')}');
-
-    return buffer.toString().trim();
-  }
+  String _buildNotities() => _notitiesController.text.trim();
 
   @override
   void dispose() {
@@ -676,21 +654,6 @@ class _BewerkScreenState extends State<BewerkScreen> {
               color: Colors.blue,
               icon: Icons.bedtime_outlined,
               onChanged: (value) => setState(() => _slaapKwaliteit = value),
-            ),
-
-            const SizedBox(height: 16),
-            const Text('Dagelijkse omgevingsfactoren', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: _dagTriggers.keys.map((t) {
-                return FilterChip(
-                  label: Text(t, style: const TextStyle(fontSize: 12)),
-                  selected: _dagTriggers[t]!,
-                  onSelected: (v) => setState(() => _dagTriggers[t] = v),
-                );
-              }).toList(),
             ),
 
             const Divider(height: 20),

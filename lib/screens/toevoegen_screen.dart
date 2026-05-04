@@ -541,11 +541,6 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
     );
   }
 
-  final Map<String, bool> _dagTriggers = {
-    'Zweet': false,
-    'Koud': false,
-    'Warmte': false,
-  };
   final _notitiesController = TextEditingController();
   DateTime _gekozenDatum = DateTime.now();
 
@@ -682,22 +677,6 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
         
         const SizedBox(height: 24),
 
-        // Dagelijkse checkboxes (triggers)
-        const Text('Dagelijkse omgevingsfactoren', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: _dagTriggers.keys.map((t) {
-            return FilterChip(
-              label: Text(t, style: const TextStyle(fontSize: 12)),
-              selected: _dagTriggers[t]!,
-              onSelected: (v) => setState(() => _dagTriggers[t] = v),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 12),
-
         // Notities
         const Text('Notities', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
@@ -732,16 +711,7 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
   }
 
   Future<void> _voegToe() async {
-    // Collect selected details to append to notes
-    final selectedTriggers = _dagTriggers.entries.where((e) => e.value).map((e) => e.key).toList();
-
-    final buffer = StringBuffer();
-    if (_notitiesController.text.trim().isNotEmpty) {
-      buffer.writeln(_notitiesController.text.trim());
-    }
-    if (selectedTriggers.isNotEmpty) buffer.writeln('Factoren: ${selectedTriggers.join(', ')}');
-
-    final notitiesToSave = buffer.toString().trim();
+    final notitiesToSave = _notitiesController.text.trim();
 
     await context.read<DagboekProvider>().voegGezondheidsMetricToe(
           eczeemErnstig: _eczeemSeverity.round().clamp(0, 10),
@@ -776,7 +746,6 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
       _droogheid = 0;
       _schilfering = 0;
       _medicatieGebruikt = false;
-      _dagTriggers.updateAll((key, value) => false);
       _gekozenDatum = DateTime.now();
     });
     _notitiesController.clear();
