@@ -33,7 +33,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             final df = DateFormat('d MMMM yyyy', 'nl_NL');
-            const primary = Color(0xFF2E7D6F);
+            final primary = Theme.of(context).colorScheme.primary;
 
             Future<void> kiesDatum({required bool isVan}) async {
               final gekozen = await showDatePicker(
@@ -73,9 +73,9 @@ class _DagboekScreenState extends State<DagboekScreen> {
             }
 
             return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
               child: Column(
@@ -92,11 +92,11 @@ class _DagboekScreenState extends State<DagboekScreen> {
                     ),
                   ),
                   // Title
-                  const Row(
+                  Row(
                     children: [
                       Icon(Icons.date_range_rounded, color: primary, size: 22),
-                      SizedBox(width: 10),
-                      Text(
+                      const SizedBox(width: 10),
+                      const Text(
                         'Filter op periode',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                       ),
@@ -229,7 +229,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
   }
 
   Widget _buildFilterBar() {
-    const primary = Color(0xFF2E7D6F);
+    final primary = Theme.of(context).colorScheme.primary;
 
     String aangepastLabel = 'Periode';
     if (_actieveFilter == DatumFilter.aangepast && _aangepastBereik != null) {
@@ -247,7 +247,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.filter_list_rounded, size: 18, color: primary),
+          Icon(Icons.filter_list_rounded, size: 18, color: primary),
           const SizedBox(width: 8),
           Expanded(
             child: SingleChildScrollView(
@@ -344,7 +344,7 @@ class _DagboekScreenState extends State<DagboekScreen> {
               _uitlegSectie(
                 context,
                 'Analyse',
-                'Op basis van je ingevoerde gegevens zoekt de app samenhang tussen allergenen en je symptomen, zodat je sneller richting krijgt bij wat je probeert.',
+                'Op basis van je ingevoerde gegevens zoekt de app samenhang tussen voeding en je symptomen, zodat je sneller richting krijgt bij wat je probeert.',
               ),
             ],
           ),
@@ -665,7 +665,7 @@ class _DagboekRijCardState extends State<DagboekRijCard> {
     
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -742,34 +742,52 @@ class _DagboekRijCardState extends State<DagboekRijCard> {
                           Wrap(
                             spacing: 6,
                             runSpacing: 6,
-                            children: widget.entry.voedselEntries
-                                .map((e) => Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)),
-                                      ),
-                                      child: Row(
+                            children: widget.entry.voedselEntries.map((e) {
+                              final heeftNaam = e.beschrijving.isNotEmpty &&
+                                  e.beschrijving != (e.ingredienten.isNotEmpty ? e.ingredienten.first : '');
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(e.categorie.icoon, size: 12, color: e.categorie.kleur),
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Icon(e.categorie.icoon, size: 12, color: e.categorie.kleur),
-                                          const SizedBox(width: 6),
-                                          Flexible(
-                                            child: Text(
-                                              e.ingredienten.isNotEmpty ? e.ingredienten.join(", ") : e.beschrijving,
+                                          Text(
+                                            heeftNaam ? e.beschrijving : e.ingredienten.join(", "),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w800,
+                                              color: Theme.of(context).colorScheme.primary,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          if (heeftNaam && e.ingredienten.isNotEmpty)
+                                            Text(
+                                              e.ingredienten.join(", "),
                                               style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w800,
-                                                color: Theme.of(context).colorScheme.primary,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w500,
+                                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
                                               ),
                                               overflow: TextOverflow.ellipsis,
                                             ),
-                                          ),
                                         ],
                                       ),
-                                    ))
-                                .toList(),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
                           ),
                           const SizedBox(height: 16),
                         ],
@@ -794,9 +812,9 @@ class _DagboekRijCardState extends State<DagboekRijCard> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFF1F5F9), style: BorderStyle.solid),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

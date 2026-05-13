@@ -129,6 +129,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
   }
 
   void _showAddFoodDialog(BuildContext context) {
+    final naamController = TextEditingController();
     final ingredientenController = TextEditingController();
     VoedselCategorie selectedCategorie = VoedselCategorie.snack;
     bool listenerAdded = false;
@@ -154,85 +155,95 @@ class _BewerkScreenState extends State<BewerkScreen> {
                 children: [
                   if (detectedAllergens.isNotEmpty) _buildAllergenWarning(detectedAllergens),
                   DropdownButtonFormField<VoedselCategorie>(
-                  initialValue: selectedCategorie,
-                  decoration: const InputDecoration(
-                    labelText: 'Categorie',
-                    border: OutlineInputBorder(),
+                    initialValue: selectedCategorie,
+                    decoration: const InputDecoration(
+                      labelText: 'Categorie',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: VoedselCategorie.values.map((cat) {
+                      return DropdownMenuItem(
+                        value: cat,
+                        child: Row(
+                          children: [
+                            Icon(cat.icoon, color: cat.kleur, size: 20),
+                            const SizedBox(width: 8),
+                            Text(cat.naam),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) setDialogState(() => selectedCategorie = value);
+                    },
                   ),
-                  items: VoedselCategorie.values.map((cat) {
-                    return DropdownMenuItem(
-                      value: cat,
-                      child: Row(
-                        children: [
-                          Icon(cat.icoon, color: cat.kleur, size: 20),
-                          const SizedBox(width: 8),
-                          Text(cat.naam),
-                        ],
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: naamController,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(
+                      labelText: 'Maaltijdnaam (optioneel)',
+                      border: OutlineInputBorder(),
+                      hintText: 'bijv. Tosti, Smoothie...',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: ingredientenController,
+                    decoration: const InputDecoration(
+                      labelText: 'Ingrediënten (komma gescheiden)',
+                      border: OutlineInputBorder(),
+                      hintText: 'bijv: Appel, Kaneel',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Annuleren'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final ingredienten = ingredientenController.text
+                      .split(',')
+                      .map((e) => e.trim())
+                      .where((e) => e.isNotEmpty)
+                      .toList();
+
+                  if (ingredienten.isNotEmpty) {
+                    final naam = naamController.text.trim();
+                    context.read<DagboekProvider>().voegVoedselToe(
+                      datum: widget.entry.datum,
+                      categorie: selectedCategorie,
+                      beschrijving: naam.isNotEmpty ? naam : ingredienten.first,
+                      ingredienten: ingredienten,
+                    );
+
+                    Navigator.pop(context);
+                    setState(() {});
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('✅ Voedselitem toegevoegd!'),
+                        backgroundColor: Colors.green,
                       ),
                     );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setDialogState(() {
-                        selectedCategorie = value;
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: ingredientenController,
-                  decoration: const InputDecoration(
-                    labelText: 'Ingrediënten (komma gescheiden)',
-                    border: OutlineInputBorder(),
-                    hintText: 'bijv: Appel, Kaneel',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuleren'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final ingredienten = ingredientenController.text
-                    .split(',')
-                    .map((e) => e.trim())
-                    .where((e) => e.isNotEmpty)
-                    .toList();
-
-                if (ingredienten.isNotEmpty) {
-                  context.read<DagboekProvider>().voegVoedselToe(
-                    datum: widget.entry.datum,
-                    categorie: selectedCategorie,
-                    beschrijving: ingredienten.first,
-                    ingredienten: ingredienten,
-                  );
-
-                  Navigator.pop(context);
-                  setState(() {}); // Refresh UI
-                  
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('✅ Voedselitem toegevoegd!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              },
-              child: const Text('Toevoegen'),
-            ),
-          ],
-        );
-      },
-    ),
-  );
-}
+                  }
+                },
+                child: const Text('Toevoegen'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 
   void _showEditSingleFoodDialog(BuildContext context, int index, VoedselEntry currentEntry) {
+    final heeftNaam = currentEntry.beschrijving.isNotEmpty &&
+        currentEntry.beschrijving != (currentEntry.ingredienten.isNotEmpty ? currentEntry.ingredienten.first : '');
+    final naamController = TextEditingController(text: heeftNaam ? currentEntry.beschrijving : '');
     final ingredientenController = TextEditingController(text: currentEntry.ingredienten.join(', '));
     VoedselCategorie selectedCategorie = currentEntry.categorie;
     bool listenerAdded = false;
@@ -276,14 +287,20 @@ class _BewerkScreenState extends State<BewerkScreen> {
                       );
                     }).toList(),
                     onChanged: (value) {
-                      if (value != null) {
-                        setDialogState(() {
-                          selectedCategorie = value;
-                        });
-                      }
+                      if (value != null) setDialogState(() => selectedCategorie = value);
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: naamController,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(
+                      labelText: 'Maaltijdnaam (optioneel)',
+                      border: OutlineInputBorder(),
+                      hintText: 'bijv. Tosti, Smoothie...',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: ingredientenController,
                     decoration: const InputDecoration(
@@ -337,11 +354,12 @@ class _BewerkScreenState extends State<BewerkScreen> {
                     .toList();
 
                 if (ingredienten.isNotEmpty) {
+                  final naam = naamController.text.trim();
                   context.read<DagboekProvider>().updateVoedselEntry(
                     datum: widget.entry.datum,
                     voedselIndex: index,
                     categorie: selectedCategorie,
-                    beschrijving: ingredienten.first,
+                    beschrijving: naam.isNotEmpty ? naam : ingredienten.first,
                     ingredienten: ingredienten,
                     notities: currentEntry.notities,
                   );
@@ -647,17 +665,6 @@ class _BewerkScreenState extends State<BewerkScreen> {
             
             const Divider(height: 20),
 
-            // Slaap
-            _buildSlider(
-              label: 'Slaapkwaliteit',
-              value: _slaapKwaliteit,
-              color: Colors.blue,
-              icon: Icons.bedtime_outlined,
-              onChanged: (value) => setState(() => _slaapKwaliteit = value),
-            ),
-
-            const Divider(height: 20),
-
                   const Text('Notities', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
                   TextField(
@@ -804,7 +811,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Allergenen gedetecteerd!',
+                  'Voeding gedetecteerd!',
                   style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
                 ),
                 Text(

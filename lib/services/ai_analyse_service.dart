@@ -107,7 +107,7 @@ class AIAnalyseService {
     return patronen;
   }
 
-  // VERBETERDE eczeem correlaties - handelt meerdere allergenen correct
+  // VERBETERDE eczeem correlaties - handelt meerdere voedingsmiddelen correct
   List<Correlatie> _berekenEczeemCorrelaties(List<DagboekEntry> entries) {
     List<Correlatie> correlaties = [];
 
@@ -159,47 +159,11 @@ class AIAnalyseService {
       }
     }
 
-    // Let op: op verzoek analyseren we alleen allergenen (geen medicatie/klinische onderdelen).
+    // Let op: op verzoek analyseren we alleen voeding (geen medicatie/klinische onderdelen).
 
     // Sorteer op sterkte
     correlaties.sort((a, b) => b.correlatieSterkte.abs().compareTo(a.correlatieSterkte.abs()));
     return correlaties;
-  }
-
-
-  // Helper om de grootste klinische klacht te vinden
-  void _voegKlinischeAnalyseToe(List<DagboekEntry> entries, List<Correlatie> correlaties) {
-    final metrics = entries.expand((e) => e.gezondheidsMetrics).toList();
-    if (metrics.isEmpty) return;
-
-    final gemRood = metrics.map((m) => m.roodheid).reduce((a, b) => a + b) / metrics.length;
-    final gemDroog = metrics.map((m) => m.droogheid).reduce((a, b) => a + b) / metrics.length;
-    final gemSchilfer = metrics.map((m) => m.schilfering).reduce((a, b) => a + b) / metrics.length;
-
-    if (gemRood > 3) {
-      correlaties.add(Correlatie(
-        voedselItem: "Gezondheid",
-        symptoom: "Roodheid",
-        correlatieSterkte: 0.7,
-        beschrijving: "Roodheid is een prominente klacht (gem. ${gemRood.toStringAsFixed(1)}/10).",
-      ));
-    }
-    if (gemDroog > 3) {
-      correlaties.add(Correlatie(
-        voedselItem: "Gezondheid",
-        symptoom: "Droogheid",
-        correlatieSterkte: 0.7,
-        beschrijving: "Hoge mate van droogheid waargenomen (gem. ${gemDroog.toStringAsFixed(1)}/10).",
-      ));
-    }
-    if (gemSchilfer > 3) {
-      correlaties.add(Correlatie(
-        voedselItem: "Gezondheid",
-        symptoom: "Schilfering",
-        correlatieSterkte: 0.7,
-        beschrijving: "Schilfering is aanwezig (gem. ${gemSchilfer.toStringAsFixed(1)}/10).",
-      ));
-    }
   }
 
   // Eczeem aanbevelingen - Verwijderd op verzoek: alleen patronen gewenst

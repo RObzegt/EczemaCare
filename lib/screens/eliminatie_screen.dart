@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/dagboek_provider.dart';
 import '../models/eliminatie_test.dart';
-import '../widgets/home_button.dart';
 import '../widgets/app_logo.dart';
 
 class EliminatieScreen extends StatelessWidget {
@@ -14,7 +14,6 @@ class EliminatieScreen extends StatelessWidget {
       appBar: AppBar(
         title: const AppLogo(subtitle: 'Eliminatie'),
         actions: [
-          const HomeButton(),
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () => _showInfoDialog(context),
@@ -97,7 +96,7 @@ class EliminatieScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Spoor triggers op door specifieke allergenen tijdelijk te vermijden.',
+            'Spoor triggers op door specifieke voeding tijdelijk te vermijden.',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.9),
               fontSize: 14,
@@ -154,9 +153,9 @@ class EliminatieScreen extends StatelessWidget {
     final durationInDays = DateTime.now().difference(test.startDatum).inDays;
     final elimProgress = (durationInDays / test.doelDagen).clamp(0.0, 1.0);
     
-    // Allergenen die nog niet geprovokeerd zijn (of worden)
+    // Voeding die nog niet geprovokeerd is (of wordt)
     final geprovokeerdeNamen = test.provocaties.map((p) => p.allergen).toSet();
-    final beschikbareAllergenen = test.allergenen.where((a) => !geprovokeerdeNamen.contains(a)).toList();
+    final beschikbareVoeding = test.allergenen.where((a) => !geprovokeerdeNamen.contains(a)).toList();
     
     return Card(
       elevation: isActief ? 6 : 1,
@@ -201,7 +200,7 @@ class EliminatieScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${test.startDatum.day}-${test.startDatum.month}-${test.startDatum.year}',
+                        DateFormat('d MMMM yyyy', 'nl_NL').format(test.startDatum),
                         style: TextStyle(fontSize: 12, color: Colors.blueGrey[400], fontWeight: FontWeight.w600),
                       ),
                     ],
@@ -259,7 +258,7 @@ class EliminatieScreen extends StatelessWidget {
                           IconButton(
                             icon: const Icon(Icons.science_outlined, size: 16),
                             color: Colors.indigo,
-                            onPressed: () => _showStartProvocatieDialog(context, test.id, test.allergenen, initialAllergen: a),
+                            onPressed: () => _showStartProvocatieDialog(context, test.id, test.allergenen, initialVoeding: a),
                             padding: const EdgeInsets.all(4),
                             constraints: const BoxConstraints(),
                             tooltip: 'Start provocatie voor $a',
@@ -275,7 +274,7 @@ class EliminatieScreen extends StatelessWidget {
                 }),
                 if (isActief)
                   InkWell(
-                    onTap: () => _showAddAllergenDialog(context, test.id, test.allergenen),
+                    onTap: () => _showAddVoedingDialog(context, test.id, test.allergenen),
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -342,12 +341,12 @@ class EliminatieScreen extends StatelessWidget {
                 }),
               ],
 
-              if (beschikbareAllergenen.isNotEmpty) ...[
+              if (beschikbareVoeding.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () => _showStartProvocatieDialog(context, test.id, beschikbareAllergenen),
+                    onPressed: () => _showStartProvocatieDialog(context, test.id, beschikbareVoeding),
                     icon: const Icon(Icons.science_rounded, size: 18),
                     label: const Text('PROVOCATIE STARTEN'),
                     style: ElevatedButton.styleFrom(
@@ -564,7 +563,7 @@ class EliminatieScreen extends StatelessWidget {
     );
   }
 
-  void _showStartProvocatieDialog(BuildContext context, String testId, List<String> allergenen, {String? initialAllergen}) {
+  void _showStartProvocatieDialog(BuildContext context, String testId, List<String> voedingLijst, {String? initialVoeding}) {
     final durationController = TextEditingController(text: '5');
     
     showDialog(
@@ -572,12 +571,12 @@ class EliminatieScreen extends StatelessWidget {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: Text(initialAllergen != null ? 'Provocatie: $initialAllergen' : 'Provocatie Starten'),
+            title: Text(initialVoeding != null ? 'Provocatie: $initialVoeding' : 'Provocatie Starten'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (initialAllergen == null) ...[
+                if (initialVoeding == null) ...[
                   const Text(
                     'Kies een ingrediënt om weer te introduceren.',
                     style: TextStyle(fontSize: 13),
@@ -597,17 +596,17 @@ class EliminatieScreen extends StatelessWidget {
                     border: OutlineInputBorder(),
                   ),
                 ),
-                if (initialAllergen == null) ...[
+                if (initialVoeding == null) ...[
                   const SizedBox(height: 20),
                   const Text(
-                    'SELECTEER ALLERGEEN:',
+                    'SELECTEER VOEDING:',
                     style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.indigo),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: allergenen.map((a) => ActionChip(
+                    children: voedingLijst.map((a) => ActionChip(
                       label: Text(a),
                       backgroundColor: Colors.indigo.withValues(alpha: 0.05),
                       onPressed: () {
@@ -625,11 +624,11 @@ class EliminatieScreen extends StatelessWidget {
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Annuleren'),
               ),
-              if (initialAllergen != null)
+              if (initialVoeding != null)
                 ElevatedButton(
                   onPressed: () {
                     final dagen = int.tryParse(durationController.text) ?? 5;
-                    context.read<DagboekProvider>().startProvocatie(testId, initialAllergen, duurDagen: dagen);
+                    context.read<DagboekProvider>().startProvocatie(testId, initialVoeding, duurDagen: dagen);
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
@@ -642,9 +641,9 @@ class EliminatieScreen extends StatelessWidget {
     );
   }
 
-  void _showAddAllergenDialog(BuildContext context, String testId, List<String> huidigeAllergenen) {
+  void _showAddVoedingDialog(BuildContext context, String testId, List<String> huidigeVoeding) {
     final suggesties = ['Melk', 'Ei', 'Gluten', 'Noten', 'Pinda', 'Soja', 'Vis', 'Schaaldieren', 'Suiker', 'Lactose']
-        .where((s) => !huidigeAllergenen.contains(s))
+        .where((s) => !huidigeVoeding.contains(s))
         .toList();
     
     showDialog(
@@ -669,7 +668,7 @@ class EliminatieScreen extends StatelessWidget {
                 children: suggesties.map((s) => ActionChip(
                   label: Text(s),
                   onPressed: () {
-                    context.read<DagboekProvider>().voegAllergeenToeAanTest(testId, s);
+                    context.read<DagboekProvider>().voegVoedingToeAanTest(testId, s);
                     Navigator.pop(context);
                   },
                 )).toList(),
@@ -696,7 +695,7 @@ class EliminatieScreen extends StatelessWidget {
     final commonAllergens = ['Melk', 'Ei', 'Gluten', 'Noten', 'Pinda', 'Soja', 'Vis', 'Schaaldieren', 'Suiker', 'Lactose'];
     final selectedAllergens = <String>{};
 
-    bool _hasSelection() {
+    bool hasSelection() {
       if (selectedAllergens.isNotEmpty) return true;
       return [
             custom1Controller.text,
@@ -705,7 +704,7 @@ class EliminatieScreen extends StatelessWidget {
           ].any((t) => t.trim().isNotEmpty);
     }
 
-    List<String> _collectAllergenen() {
+    List<String> collectVoeding() {
       final set = <String>{...selectedAllergens};
       for (final c in [custom1Controller, custom2Controller, custom3Controller]) {
         final s = c.text.trim();
@@ -831,10 +830,10 @@ class EliminatieScreen extends StatelessWidget {
                 child: const Text('Annuleren'),
               ),
               ElevatedButton(
-                onPressed: !_hasSelection()
-                  ? null 
+                onPressed: !hasSelection()
+                  ? null
                   : () {
-                    final lijst = _collectAllergenen();
+                    final lijst = collectVoeding();
                     if (lijst.isEmpty) return;
                     final dagen = int.tryParse(durationController.text) ?? 21;
                     context.read<DagboekProvider>().startEliminatieTest(
@@ -890,7 +889,7 @@ class EliminatieScreen extends StatelessWidget {
               ),
               SizedBox(height: 8),
               Text(
-                'Let op: Raadpleeg bij ernstige allergieën altijd een arts of diëtist.',
+                'Let op: Raadpleeg bij ernstige klachten altijd een arts of diëtist.',
                 style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold),
               ),
             ],

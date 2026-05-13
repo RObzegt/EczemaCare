@@ -85,7 +85,7 @@ class _ProfielScreenState extends State<ProfielScreen> {
             const SizedBox(height: 20),
             const _ProfileHero(),
             const SizedBox(height: 32),
-            _buildSectionHeader(context, 'Mijn Allergiën', 'De app waarschuwt je bij deze stoffen'),
+            _buildSectionHeader(context, 'Mijn Voeding', 'De app waarschuwt je bij deze voeding'),
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -156,7 +156,7 @@ class _ProfielScreenState extends State<ProfielScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Eigen allergenen',
+                        'Eigen voeding',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -226,7 +226,7 @@ class _ProfielScreenState extends State<ProfielScreen> {
                       style: TextStyle(fontSize: 12, color: Colors.blueGrey[400]),
                     ),
                     value: provider.isDarkMode,
-                    activeColor: const Color(0xFF6B8E5A),
+                    activeThumbColor: const Color(0xFF6B8E5A),
                     onChanged: (_) => provider.toggleDarkMode(),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   );

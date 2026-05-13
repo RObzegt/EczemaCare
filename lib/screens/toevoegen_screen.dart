@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/dagboek_provider.dart';
 import '../models/voedsel_categorie.dart';
-import '../widgets/home_button.dart';
 import '../widgets/app_logo.dart';
 
 class ToevoegenScreen extends StatefulWidget {
@@ -31,7 +30,6 @@ class _ToevoegenScreenState extends State<ToevoegenScreen> {
       appBar: AppBar(
         title: const AppLogo(subtitle: 'Toevoegen'),
         actions: [
-          const HomeButton(),
           Consumer<DagboekProvider>(
             builder: (context, provider, child) {
               return Padding(
@@ -130,14 +128,15 @@ class VoegVoedselToeForm extends StatefulWidget {
 class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
   final _formKey = GlobalKey<FormState>();
   VoedselCategorie _geselecteerdeCategorie = VoedselCategorie.ontbijt;
-  final _beschrijvingController = TextEditingController();
+  final _maaltijdNaamController = TextEditingController();
   final _notitiesController = TextEditingController();
   List<String> _ingredienten = [];
   DateTime _gekozenDatum = DateTime.now();
-  static const List<String> _snelleAllergenen = [
+  static const List<String> _snelleVoeding = [
     'Melk',
     'Gluten',
     'Noten',
+    'Pinda',
     'Ei',
     'Soja',
     'Vis',
@@ -155,7 +154,7 @@ class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
 
   @override
   void dispose() {
-    _beschrijvingController.dispose();
+    _maaltijdNaamController.dispose();
     _notitiesController.dispose();
     _ingredientFocusNode.dispose();
     _ingredientTextController.dispose();
@@ -202,14 +201,22 @@ class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
             },
           ),
           const SizedBox(height: 16),
+          TextFormField(
+            controller: _maaltijdNaamController,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              labelText: 'Maaltijdnaam (optioneel)',
+              hintText: 'bijv. Tosti, Caesar salade, Smoothie...',
+              prefixIcon: Icon(Icons.restaurant_rounded, size: 20, color: Theme.of(context).colorScheme.primary),
+            ),
+          ),
           const SizedBox(height: 16),
-          const SizedBox(height: 12),
-          const Text('Snelle allergenen', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          const Text('Snelle voeding', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _snelleAllergenen.map((allerg) {
+            children: _snelleVoeding.map((allerg) {
               final isSelected = _ingredienten.contains(allerg);
               return FilterChip(
                 label: Text(
@@ -257,9 +264,9 @@ class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
             ),
             child: _ingredienten.isEmpty
                 ? Center(
@@ -320,8 +327,6 @@ class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
                   hintText: 'Typ bijv. Tomaat, Kaas...',
                   prefixIcon: const Icon(Icons.add_circle_outline, size: 20),
                   border: const OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.white,
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.add),
                     onPressed: () {
@@ -411,8 +416,8 @@ class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
       return;
     }
 
-    // Gebruik eerste ingrediënt als beschrijving
-    final beschrijving = _ingredienten.first;
+    final naam = _maaltijdNaamController.text.trim();
+    final beschrijving = naam.isNotEmpty ? naam : _ingredienten.first;
 
     await context.read<DagboekProvider>().voegVoedselToe(
           categorie: _geselecteerdeCategorie,
@@ -432,6 +437,7 @@ class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
     );
 
     // Reset form
+    _maaltijdNaamController.clear();
     _notitiesController.clear();
     setState(() {
       _ingredienten = [];
@@ -466,7 +472,7 @@ class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Allergenen gedetecteerd!',
+                  'Voeding gedetecteerd!',
                   style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
                 ),
                 Text(

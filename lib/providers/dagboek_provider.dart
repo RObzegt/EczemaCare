@@ -29,7 +29,7 @@ class DagboekProvider extends ChangeNotifier {
   List<String> _userAllergens = [];
   bool _isDarkMode = false;
   
-  // Mapping van veelvoorkomende voedingsmiddelen naar hun allergenen
+  // Mapping van veelvoorkomende voedingsmiddelen naar hun voedingscategorieën
   final Map<String, List<String>> _allergenMapping = {
     // Zuivel / Melk
     'yoghurt': ['Melk'],
@@ -173,9 +173,9 @@ class DagboekProvider extends ChangeNotifier {
       _subscriptionLevel = SubscriptionLevel.values[subLevelIndex.clamp(0, SubscriptionLevel.values.length - 1)];
       debugPrint('Subscription level geladen: $_subscriptionLevel');
 
-      // Inladen allergenen
+      // Inladen voeding
       _userAllergens = prefs.getStringList(_allergenKey) ?? [];
-      debugPrint('Allergenen geladen: $_userAllergens');
+      debugPrint('Voeding geladen: $_userAllergens');
 
       _isDarkMode = prefs.getBool(_darkModeKey) ?? false;
 
@@ -250,7 +250,7 @@ class DagboekProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Allergeen management
+  // Voeding management
   Future<void> toggleAllergen(String allergeen) async {
     if (_userAllergens.contains(allergeen)) {
       _userAllergens.remove(allergeen);
@@ -284,7 +284,7 @@ class DagboekProvider extends ChangeNotifier {
       return testText.contains('melk');
     }
 
-    // Check directe matches met actieve allergenen
+    // Check directe matches met actieve voeding
     for (var allergeen in activeAllergens) {
       final lowerA = allergeen.toLowerCase();
       if (lowerA == 'melk') {
@@ -440,7 +440,7 @@ class DagboekProvider extends ChangeNotifier {
           voedselEntries: [
             VoedselEntry(
               categorie: VoedselCategorie.snack,
-              beschrijving: 'Allergenen',
+              beschrijving: 'Voeding',
               ingredienten: detected,
             ),
           ],
@@ -604,7 +604,7 @@ class DagboekProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> voegAllergeenToeAanTest(String id, String allergeen) async {
+  Future<void> voegVoedingToeAanTest(String id, String allergeen) async {
     final index = _eliminatieTests.indexWhere((t) => t.id == id);
     if (index != -1) {
       final huidigeAllergenen = List<String>.from(_eliminatieTests[index].allergenen);

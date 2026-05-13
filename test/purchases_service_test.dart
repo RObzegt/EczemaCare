@@ -82,7 +82,6 @@ void main() {
     test('returns packages immediately when first call succeeds', () async {
       // Arrange – first call returns a non-empty list (simulated via [])
       // We use a sentinel non-null object via a custom fake list.
-      final sentinel = <Package>[];  // empty Package list stands for "some packages"
       // We test the branching logic rather than the Package contents.
 
       final gateway = FakePurchasesGateway(

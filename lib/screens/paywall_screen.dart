@@ -162,8 +162,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     width: 1.5,
                   ),
                 ),
-                child: Column(
-                  children: const [
+                child: const Column(
+                  children: [
                     // PRIMARY: billed amount — largest, most prominent element
                     Text(
                       '€2,99',

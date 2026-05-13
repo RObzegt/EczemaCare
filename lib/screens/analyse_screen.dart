@@ -5,7 +5,6 @@ import '../providers/dagboek_provider.dart';
 import '../models/analyse_resultaat.dart';
 import '../models/dagboek_entry.dart';
 import 'grafiek_view.dart';
-import '../widgets/home_button.dart';
 import '../widgets/app_logo.dart';
 
 class AnalyseScreen extends StatefulWidget {
@@ -23,9 +22,6 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const AppLogo(subtitle: 'Analyse'),
-        actions: const [
-          HomeButton(),
-        ],
       ),
       body: Consumer<DagboekProvider>(
         builder: (context, provider, child) {
@@ -44,7 +40,7 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F0),
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -116,23 +112,13 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
                   if (provider.huidigAnalyseResultaat!.dagData.isNotEmpty ||
                       provider.huidigAnalyseResultaat!.weekData.isNotEmpty ||
                       provider.huidigAnalyseResultaat!.maandData.isNotEmpty) ...[
-                    const Padding(
-                      padding: EdgeInsets.only(left: 4, bottom: 12),
-                      child: Text(
-                        'TREND ANALYSE',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF64748B),
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                    ),
+                    const _SectionLabel('TREND ANALYSE'),
                     GrafiekenView(
                       dagData: provider.huidigAnalyseResultaat!.dagData,
                       weekData: provider.huidigAnalyseResultaat!.weekData,
                       maandData: provider.huidigAnalyseResultaat!.maandData,
                       topAllergen: provider.huidigAnalyseResultaat!.topAllergen,
+                      selectedPeriod: _selectedPeriod,
                     ),
                   ],
                 ] else
@@ -158,7 +144,7 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected ? Theme.of(context).colorScheme.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             boxShadow: isSelected 
               ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
@@ -206,18 +192,7 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
       children: [
         // Patronen (Alleen patronen tonen zoals gevraagd)
         if (resultaat.patronen.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.only(left: 4, bottom: 12),
-            child: Text(
-              'GEDETECTEERDE PATRONEN',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF64748B),
-                letterSpacing: 1.0,
-              ),
-            ),
-          ),
+          const _SectionLabel('GEDETECTEERDE PATRONEN'),
           ...resultaat.patronen.map((p) => PatroonCard(patroon: p)),
           const SizedBox(height: 16),
         ],
@@ -272,18 +247,7 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
         
         // Bronnen
         if (resultaat.medicalSources.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.only(left: 4, bottom: 12),
-            child: Text(
-              'BETROUWBARE BRONNEN',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF64748B),
-                letterSpacing: 1.0,
-              ),
-            ),
-          ),
+          const _SectionLabel('BETROUWBARE BRONNEN'),
           ...resultaat.medicalSources.map((bron) => _buildBronCard(bron)),
           const SizedBox(height: 24),
         ],
@@ -357,9 +321,9 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -499,28 +463,49 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
   }
 }
 
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          letterSpacing: 1.0,
+        ),
+      ),
+    );
+  }
+}
+
 class GeenDataView extends StatelessWidget {
   const GeenDataView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.bar_chart, size: 80, color: Colors.grey),
-          SizedBox(height: 16),
+          Icon(Icons.bar_chart, size: 80, color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+          const SizedBox(height: 16),
           Text(
             'Nog geen data',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
               'Voeg eerst voedsel en gezondheidsdata toe om analyse te kunnen uitvoeren.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
         ],
@@ -529,235 +514,6 @@ class GeenDataView extends StatelessWidget {
   }
 }
 
-class DataOverzichtCard extends StatelessWidget {
-  final int aantalEntries;
-
-  const DataOverzichtCard({super.key, required this.aantalEntries});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Data Overzicht',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _OverzichtItem(icoon: Icons.calendar_today, waarde: '$aantalEntries', label: 'Dagen'),
-                _OverzichtItem(icoon: Icons.restaurant, waarde: '~${aantalEntries * 3}', label: 'Maaltijden'),
-                _OverzichtItem(icoon: Icons.favorite, waarde: '~${aantalEntries * 2}', label: 'Metrics'),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OverzichtItem extends StatelessWidget {
-  final IconData icoon;
-  final String waarde;
-  final String label;
-
-  const _OverzichtItem({
-    required this.icoon,
-    required this.waarde,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icoon, color: Colors.blue, size: 32),
-        const SizedBox(height: 8),
-        Text(
-          waarde,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-        ),
-      ],
-    );
-  }
-}
-
-class AnalyseResultatenView extends StatelessWidget {
-  final AnalyseResultaat resultaat;
-  final List<DagboekEntry> entries;
-
-  const AnalyseResultatenView({
-    super.key,
-    required this.resultaat,
-    required this.entries,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Overzicht van bevindingen
-        _BevindingenOverzicht(
-          aanbevelingen: resultaat.aanbevelingen,
-          correlaties: resultaat.correlaties,
-          patronen: resultaat.patronen,
-        ),
-        const SizedBox(height: 24),
-
-        // Top correlaties visueel
-        if (resultaat.correlaties.isNotEmpty) ...[
-          const Text(
-            'Voedsel & Gezondheid Koppeling',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          _CorrelatiesSamenvatting(correlaties: resultaat.correlaties),
-          const SizedBox(height: 16),
-          _TopCorrelatiesVisueel(correlaties: resultaat.correlaties.take(5).toList()),
-          const SizedBox(height: 20),
-        ],
-
-        // Gedetailleerde correlaties
-        if (resultaat.correlaties.isNotEmpty) ...[
-          const Text(
-            'Gedetailleerde Correlaties',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          ...resultaat.correlaties.map((correlatie) => CorrelatieCard(correlatie: correlatie)),
-          const SizedBox(height: 20),
-        ],
-
-        // Patronen
-        if (resultaat.patronen.isNotEmpty) ...[
-          const Text(
-            'Patronen in Gegevens',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          ...resultaat.patronen.map((patroon) => PatroonCard(patroon: patroon)),
-          const SizedBox(height: 20),
-        ],
-
-        // Info footer
-        const InfoCard(
-          icoon: Icons.info,
-          titel: 'Over deze analyse',
-          beschrijving:
-              'Deze analyse is gebaseerd op de voedings- en gezondheidsdata die je hebt ingevoerd. Hoe meer data, hoe nauwkeuriger de patronen.',
-        ),
-      ],
-    );
-  }
-}
-
-class CorrelatieCard extends StatelessWidget {
-  final Correlatie correlatie;
-
-  const CorrelatieCard({super.key, required this.correlatie});
-
-  Color _kleurVoorSterkte(double sterkte) {
-    if (sterkte > 0.6) return Colors.red;
-    if (sterkte > 0.3) return Colors.orange;
-    return Colors.green;
-  }
-
-  IconData _iconVoorSterkte(double sterkte, String symptoom) {
-    if (sterkte > 0.3) return Icons.warning_rounded;
-    if (sterkte < -0.3) return Icons.thumb_up_rounded;
-    return Icons.help_rounded;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final kleur = _kleurVoorSterkte(correlatie.correlatieSterkte);
-    final icon = _iconVoorSterkte(correlatie.correlatieSterkte, correlatie.symptoom);
-    final percentage = (correlatie.correlatieSterkte.abs() * 100).toInt();
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      color: kleur == Colors.green ? Colors.green[50] : (kleur == Colors.orange ? Colors.orange[50] : Colors.red[50]),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: kleur.withAlpha(50),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, color: kleur, size: 24),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        correlatie.voedselItem,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        correlatie.symptoom,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: kleur.withAlpha(100),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '$percentage%',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: kleur,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              correlatie.beschrijving,
-              style: TextStyle(fontSize: 13, color: Colors.grey[700], height: 1.4),
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: correlatie.correlatieSterkte.abs(),
-                backgroundColor: Colors.grey[300],
-                valueColor: AlwaysStoppedAnimation(kleur),
-                minHeight: 6,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class PatroonCard extends StatelessWidget {
   final Patroon patroon;
@@ -766,26 +522,64 @@ class PatroonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final betrouwbaarheid = (patroon.betrouwbaarheid * 100).toInt();
+    final color = betrouwbaarheid >= 70 ? Colors.green : (betrouwbaarheid >= 40 ? Colors.orange : Colors.blueGrey);
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      color: color.withValues(alpha: 0.07),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: color.withValues(alpha: 0.2)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.pattern_rounded, color: color, size: 18),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(patroon.beschrijving),
-                  const SizedBox(height: 4),
                   Text(
-                    'Frequentie: ${patroon.frequentie}x • Betrouwbaarheid: ${(patroon.betrouwbaarheid * 100).toInt()}%',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    patroon.beschrijving,
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.repeat_rounded, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${patroon.frequentie}× voorkomend',
+                        style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '$betrouwbaarheid% zekerheid',
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.check_circle, color: Colors.green),
           ],
         ),
       ),
@@ -807,14 +601,16 @@ class InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
     return Card(
-      color: Colors.blue[50],
+      color: primary.withValues(alpha: 0.06),
+      elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icoon, color: Colors.blue, size: 28),
+            Icon(icoon, color: primary, size: 28),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -822,12 +618,12 @@ class InfoCard extends StatelessWidget {
                 children: [
                   Text(
                     titel,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     beschrijving,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -839,306 +635,3 @@ class InfoCard extends StatelessWidget {
   }
 }
 
-class _CorrelatiesSamenvatting extends StatelessWidget {
-  final List<Correlatie> correlaties;
-
-  const _CorrelatiesSamenvatting({required this.correlaties});
-
-  @override
-  Widget build(BuildContext context) {
-    final poitieveCorrelaties = correlaties.where((c) => c.correlatieSterkte > 0.3).toList();
-    final negatievelatiaties = correlaties.where((c) => c.correlatieSterkte < -0.3).toList();
-
-    return Card(
-      color: Colors.blue[50],
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Column(
-                  children: [
-                    Text(
-                      '${negatievelatiaties.length}',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red),
-                    ),
-                    const Text('Voorzorgsmaatregelen', style: TextStyle(fontSize: 12, color: Colors.red)),
-                  ],
-                ),
-                Column(
-                  children: [
-                    Text(
-                      '${poitieveCorrelaties.length}',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green),
-                    ),
-                    const Text('Aanbevolen', style: TextStyle(fontSize: 12, color: Colors.green)),
-                  ],
-                ),
-                Column(
-                  children: [
-                    Text(
-                      '${correlaties.length}',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.orange),
-                    ),
-                    const Text('Totaal', style: TextStyle(fontSize: 12, color: Colors.orange)),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BevindingenOverzicht extends StatelessWidget {
-  final List<String> aanbevelingen;
-  final List<Correlatie> correlaties;
-  final List<Patroon> patronen;
-
-  const _BevindingenOverzicht({
-    required this.aanbevelingen,
-    required this.correlaties,
-    required this.patronen,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final poitieveVoedsel = correlaties.where((c) => c.correlatieSterkte < -0.3).length;
-    final negatieveVoedsel = correlaties.where((c) => c.correlatieSterkte > 0.3).length;
-
-    return Card(
-      color: Colors.green[50],
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.insights, color: Colors.green, size: 24),
-                SizedBox(width: 12),
-                Text(
-                  'Analyse Samenvatting',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Column(
-                  children: [
-                    Text(
-                      '${patronen.length}',
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue),
-                    ),
-                    const Text('Patronen', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
-                Column(
-                  children: [
-                    Text(
-                      '$poitieveVoedsel',
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green),
-                    ),
-                    const Text('Positief', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
-                Column(
-                  children: [
-                    Text(
-                      '$negatieveVoedsel',
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.red),
-                    ),
-                    const Text('Voorzorg', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TopCorrelatiesVisueel extends StatelessWidget {
-  final List<Correlatie> correlaties;
-
-  const _TopCorrelatiesVisueel({required this.correlaties});
-
-  Color _getColorForSterkte(double sterkte) {
-    if (sterkte > 0.5) return Colors.red;
-    if (sterkte > 0.3) return Colors.orange;
-    if (sterkte < -0.5) return Colors.green;
-    if (sterkte < -0.3) return Colors.lightGreen;
-    return Colors.grey;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Sterkste Verbanden:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 12),
-            ...correlaties.map((correlatie) {
-              final percentage = (correlatie.correlatieSterkte.abs() * 100).toInt();
-              final color = _getColorForSterkte(correlatie.correlatieSterkte);
-              final isPositive = correlatie.correlatieSterkte > 0;
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                correlatie.voedselItem,
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                              ),
-                              Text(
-                                '${isPositive ? '⬆️ Verhoogt' : '⬇️ Verlaagt'} ${correlatie.symptoom}',
-                                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: color.withAlpha(50),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '$percentage%',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value: correlatie.correlatieSterkte.abs(),
-                        backgroundColor: Colors.grey[300],
-                        valueColor: AlwaysStoppedAnimation(color),
-                        minHeight: 4,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class DagenOverzichtCard extends StatelessWidget {
-  final List<DagboekEntry> entries;
-
-  const DagenOverzichtCard({
-    super.key,
-    required this.entries,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final sortedEntries = [...entries]..sort((a, b) => b.datum.compareTo(a.datum));
-
-    return Card(
-      elevation: 2,
-      color: Colors.grey[50],
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Dagelijkse Overzicht',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: sortedEntries.length,
-              separatorBuilder: (_, __) => const Divider(height: 8),
-              itemBuilder: (context, index) {
-                final entry = sortedEntries[index];
-                final ingredienten = entry.voedselEntries
-                    .map((v) => v.beschrijving)
-                    .join(', ');
-                
-                final eczeem = entry.gezondheidsMetrics.isNotEmpty
-                    ? entry.gezondheidsMetrics.first
-                    : null;
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Datum
-                    Text(
-                      '${entry.datum.day} ${_getMaandNaam(entry.datum.month)} ${entry.datum.year}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Ingrediënten
-                    if (ingredienten.isNotEmpty)
-                      Text(
-                        '🍽️ $ingredienten',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    // Eczeem
-                    if (eczeem != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          'Eczeem: Ernst ${eczeem.eczeemErnstig}/10 • Jeuk ${eczeem.eczeemJeuken}/10',
-                          style: TextStyle(fontSize: 12, color: Colors.red[700]),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _getMaandNaam(int maand) {
-    const maanden = [
-      'januari', 'februari', 'maart', 'april', 'mei', 'juni',
-      'juli', 'augustus', 'september', 'oktober', 'november', 'december'
-    ];
-    return maanden[maand - 1];
-  }
-}
