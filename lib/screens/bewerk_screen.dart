@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/dagboek_entry.dart';
 import '../models/voedsel_entry.dart';
@@ -16,6 +17,9 @@ class BewerkScreen extends StatefulWidget {
 }
 
 class _BewerkScreenState extends State<BewerkScreen> {
+  late final String _dagboekEntryId;
+  late final DateTime _vasteKalenderdatum;
+
   // Health metrics
   late double _eczeemErnstig;
   late double _eczeemJeuk;
@@ -32,7 +36,10 @@ class _BewerkScreenState extends State<BewerkScreen> {
   @override
   void initState() {
     super.initState();
-    
+    _dagboekEntryId = widget.entry.id;
+    final d = widget.entry.datum;
+    _vasteKalenderdatum = DateTime(d.year, d.month, d.day);
+
     // Load existing health data
     if (widget.entry.gezondheidsMetrics.isNotEmpty) {
       final metric = widget.entry.gezondheidsMetrics.first;
@@ -83,6 +90,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
     
     await provider.updateGezondheidsMetric(
       datum: widget.entry.datum,
+      dagboekEntryId: _dagboekEntryId,
       eczeemErnstig: _eczeemErnstig.round(),
       eczeemJeuken: _eczeemJeuk.round(),
       eczeemMild: _eczeemMild.round(),
@@ -95,7 +103,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
       notities: _buildNotities().isEmpty ? null : _buildNotities(),
     );
 
-    final updatedEntry = provider.getEntryForDate(widget.entry.datum);
+    final updatedEntry = provider.getDagboekEntryById(_dagboekEntryId);
     if (updatedEntry == null) {
       debugPrint('❌ ENTRY NIET GEVONDEN NA OPSLAAN');
     } else if (updatedEntry.gezondheidsMetrics.isEmpty) {
@@ -215,6 +223,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                     final naam = naamController.text.trim();
                     context.read<DagboekProvider>().voegVoedselToe(
                       datum: widget.entry.datum,
+                      dagboekEntryId: _dagboekEntryId,
                       categorie: selectedCategorie,
                       beschrijving: naam.isNotEmpty ? naam : ingredienten.first,
                       ingredienten: ingredienten,
@@ -326,6 +335,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                         onPressed: () {
                           context.read<DagboekProvider>().verwijderVoedselItem(
                             datum: widget.entry.datum,
+                            dagboekEntryId: _dagboekEntryId,
                             voedselIndex: index,
                           );
                           Navigator.pop(confirmContext); // Dialog 2
@@ -357,6 +367,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                   final naam = naamController.text.trim();
                   context.read<DagboekProvider>().updateVoedselEntry(
                     datum: widget.entry.datum,
+                    dagboekEntryId: _dagboekEntryId,
                     voedselIndex: index,
                     categorie: selectedCategorie,
                     beschrijving: naam.isNotEmpty ? naam : ingredienten.first,
@@ -388,7 +399,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Entry Bewerken'),
+        title: const Text('Gegevens Bewerken'),
         actions: [
           const HomeButton(),
           Padding(
@@ -426,7 +437,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.entry.geformateerdeDatum,
+                    DateFormat('d MMMM yyyy', 'nl_NL').format(_vasteKalenderdatum),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -434,7 +445,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                     ),
                   ),
                   Text(
-                    widget.entry.dagVanWeek,
+                    DateFormat('EEEE', 'nl_NL').format(_vasteKalenderdatum),
                     style: TextStyle(
                       fontSize: 12,
                       color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),

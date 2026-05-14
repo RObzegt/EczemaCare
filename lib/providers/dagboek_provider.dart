@@ -320,6 +320,7 @@ class DagboekProvider extends ChangeNotifier {
     required List<String> ingredienten,
     String? notities,
     DateTime? datum,
+    String? dagboekEntryId,
   }) async {
     final nieuweEntry = VoedselEntry(
       categorie: categorie,
@@ -329,14 +330,16 @@ class DagboekProvider extends ChangeNotifier {
       notities: notities,
     );
 
-    _voegVoedselEntryToe(nieuweEntry, datum ?? DateTime.now());
+    _voegVoedselEntryToe(nieuweEntry, datum ?? DateTime.now(), dagboekEntryId: dagboekEntryId);
     await _slaOpInOpslag();
     debugPrint('✅ Voedsel toegevoegd en opgeslagen');
     notifyListeners();
   }
 
-  void _voegVoedselEntryToe(VoedselEntry entry, DateTime datum) {
-    final index = _vindDagboekIndexVoorDatum(datum);
+  void _voegVoedselEntryToe(VoedselEntry entry, DateTime datum, {String? dagboekEntryId}) {
+    final index = dagboekEntryId != null
+        ? _vindDagboekIndexVoorEntryId(dagboekEntryId)
+        : _vindDagboekIndexVoorDatum(datum);
 
     if (index != null) {
       _dagboekEntries[index].voedselEntries.add(entry);
@@ -481,8 +484,11 @@ class DagboekProvider extends ChangeNotifier {
     required int schilfering,
     required bool medicatieGebruikt,
     String? notities,
+    String? dagboekEntryId,
   }) async {
-    final index = _vindDagboekIndexVoorDatum(datum);
+    final index = dagboekEntryId != null
+        ? _vindDagboekIndexVoorEntryId(dagboekEntryId)
+        : _vindDagboekIndexVoorDatum(datum);
     
     debugPrint('=== UPDATE GEZONDHEIDSMETRIC ===');
     debugPrint('Datum: $datum');
@@ -509,7 +515,7 @@ class DagboekProvider extends ChangeNotifier {
       } else {
         // Add metric when none exists yet
         _dagboekEntries[index].gezondheidsMetrics.add(GezondheidsMetric(
-          tijdstip: datum,
+          tijdstip: _dagboekEntries[index].datum,
           eczeemErnstig: eczeemErnstig,
           eczeemJeuken: eczeemJeuken,
           eczeemMild: eczeemMild,
@@ -539,8 +545,11 @@ class DagboekProvider extends ChangeNotifier {
     required String beschrijving,
     required List<String> ingredienten,
     String? notities,
+    String? dagboekEntryId,
   }) async {
-    final dagIndex = _vindDagboekIndexVoorDatum(datum);
+    final dagIndex = dagboekEntryId != null
+        ? _vindDagboekIndexVoorEntryId(dagboekEntryId)
+        : _vindDagboekIndexVoorDatum(datum);
     
     if (dagIndex != null && 
         voedselIndex >= 0 && 
@@ -565,8 +574,11 @@ class DagboekProvider extends ChangeNotifier {
   Future<void> verwijderVoedselItem({
     required DateTime datum,
     required int voedselIndex,
+    String? dagboekEntryId,
   }) async {
-    final dagIndex = _vindDagboekIndexVoorDatum(datum);
+    final dagIndex = dagboekEntryId != null
+        ? _vindDagboekIndexVoorEntryId(dagboekEntryId)
+        : _vindDagboekIndexVoorDatum(datum);
     
     if (dagIndex != null && 
         voedselIndex >= 0 && 
@@ -671,6 +683,13 @@ class DagboekProvider extends ChangeNotifier {
     }
   }
   // Helper functies
+  int? _vindDagboekIndexVoorEntryId(String id) {
+    for (int i = 0; i < _dagboekEntries.length; i++) {
+      if (_dagboekEntries[i].id == id) return i;
+    }
+    return null;
+  }
+
   int? _vindDagboekIndexVoorDatum(DateTime datum) {
     for (int i = 0; i < _dagboekEntries.length; i++) {
       if (_isSameDay(_dagboekEntries[i].datum, datum)) return i;
@@ -706,6 +725,13 @@ class DagboekProvider extends ChangeNotifier {
     final index = _vindDagboekIndexVoorDatum(datum);
     if (index != null) {
       return _dagboekEntries[index];
+    }
+    return null;
+  }
+
+  DagboekEntry? getDagboekEntryById(String id) {
+    for (final e in _dagboekEntries) {
+      if (e.id == id) return e;
     }
     return null;
   }
