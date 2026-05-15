@@ -48,4 +48,18 @@ class DagboekEntry {
           .toList(),
     );
   }
+
+  DagboekEntry copyWith({
+    String? id,
+    DateTime? datum,
+    List<VoedselEntry>? voedselEntries,
+    List<GezondheidsMetric>? gezondheidsMetrics,
+  }) {
+    return DagboekEntry(
+      id: id ?? this.id,
+      datum: datum ?? this.datum,
+      voedselEntries: voedselEntries ?? this.voedselEntries,
+      gezondheidsMetrics: gezondheidsMetrics ?? this.gezondheidsMetrics,
+    );
+  }
 }

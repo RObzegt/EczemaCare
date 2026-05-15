@@ -471,6 +471,59 @@ class DagboekProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Verplaatst een dagboekregel naar een andere kalenderdag (zelfde id, tijd van de dag behouden).
+  Future<void> wijzigDagboekEntryKalenderdatum(String entryId, DateTime nieuweKalenderDag) async {
+    final i = _vindDagboekIndexVoorEntryId(entryId);
+    if (i == null) return;
+    final e = _dagboekEntries[i];
+    final old = e.datum;
+    final nieuwDatum = DateTime(
+      nieuweKalenderDag.year,
+      nieuweKalenderDag.month,
+      nieuweKalenderDag.day,
+      old.hour,
+      old.minute,
+      old.second,
+      old.millisecond,
+    );
+    if (_isSameDay(old, nieuwDatum)) return;
+
+    final shiftedVoedsel = e.voedselEntries.map((v) {
+      final t = v.tijdstip;
+      return VoedselEntry(
+        id: v.id,
+        categorie: v.categorie,
+        beschrijving: v.beschrijving,
+        tijdstip: DateTime(nieuwDatum.year, nieuwDatum.month, nieuwDatum.day, t.hour, t.minute, t.second, t.millisecond),
+        ingredienten: List<String>.from(v.ingredienten),
+        notities: v.notities,
+      );
+    }).toList();
+
+    final shiftedMetrics = e.gezondheidsMetrics.map((m) {
+      final t = m.tijdstip;
+      return GezondheidsMetric(
+        id: m.id,
+        tijdstip: DateTime(nieuwDatum.year, nieuwDatum.month, nieuwDatum.day, t.hour, t.minute, t.second, t.millisecond),
+        eczeemErnstig: m.eczeemErnstig,
+        eczeemJeuken: m.eczeemJeuken,
+        eczeemMild: m.eczeemMild,
+        slaapKwaliteit: m.slaapKwaliteit,
+        geenEczeem: m.geenEczeem,
+        roodheid: m.roodheid,
+        droogheid: m.droogheid,
+        schilfering: m.schilfering,
+        medicatieGebruikt: m.medicatieGebruikt,
+        notities: m.notities,
+      );
+    }).toList();
+
+    _dagboekEntries[i] = e.copyWith(datum: nieuwDatum, voedselEntries: shiftedVoedsel, gezondheidsMetrics: shiftedMetrics);
+    _sorteerdagboekEntries();
+    await _slaOpInOpslag();
+    notifyListeners();
+  }
+
   // Update gezondheidsmetrics voor een specifieke dag
   Future<void> updateGezondheidsMetric({
     required DateTime datum,

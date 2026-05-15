@@ -18,7 +18,7 @@ class BewerkScreen extends StatefulWidget {
 
 class _BewerkScreenState extends State<BewerkScreen> {
   late final String _dagboekEntryId;
-  late final DateTime _vasteKalenderdatum;
+  late DateTime _vasteKalenderdatum;
 
   // Health metrics
   late double _eczeemErnstig;
@@ -77,6 +77,71 @@ class _BewerkScreenState extends State<BewerkScreen> {
 
   String _buildNotities() => _notitiesController.text.trim();
 
+  /// Huidige kalenderdag + oorspronkelijke kloktijd (voor opslaan en voedsel).
+  DateTime get _effectieveEntryDatum {
+    final t = widget.entry.datum;
+    return DateTime(
+      _vasteKalenderdatum.year,
+      _vasteKalenderdatum.month,
+      _vasteKalenderdatum.day,
+      t.hour,
+      t.minute,
+      t.second,
+      t.millisecond,
+    );
+  }
+
+  Future<void> _pickDatum() async {
+    final nu = DateTime.now();
+    final primary = Theme.of(context).colorScheme.primary;
+    var initial = _vasteKalenderdatum;
+    if (initial.isAfter(nu)) initial = DateTime(nu.year, nu.month, nu.day);
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020, 1, 1),
+      lastDate: nu,
+      locale: const Locale('nl', 'NL'),
+      helpText: 'Kies dagboekdag',
+      cancelText: 'Annuleren',
+      confirmText: 'OK',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: primary,
+                  onPrimary: Colors.white,
+                ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked == null || !mounted) return;
+    final nieuw = DateTime(picked.year, picked.month, picked.day);
+    if (nieuw.year == _vasteKalenderdatum.year &&
+        nieuw.month == _vasteKalenderdatum.month &&
+        nieuw.day == _vasteKalenderdatum.day) {
+      return;
+    }
+
+    setState(() {
+      _vasteKalenderdatum = nieuw;
+    });
+
+    await context.read<DagboekProvider>().wijzigDagboekEntryKalenderdatum(_dagboekEntryId, _vasteKalenderdatum);
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Dagboekdag aangepast'),
+        duration: Duration(seconds: 2),
+        backgroundColor: Color(0xFF0D9488),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _notitiesController.dispose();
@@ -87,9 +152,9 @@ class _BewerkScreenState extends State<BewerkScreen> {
     final provider = context.read<DagboekProvider>();
     
     debugPrint('=== SAVING CHANGES FROM BEWERK SCREEN ===');
-    
+
     await provider.updateGezondheidsMetric(
-      datum: widget.entry.datum,
+      datum: _effectieveEntryDatum,
       dagboekEntryId: _dagboekEntryId,
       eczeemErnstig: _eczeemErnstig.round(),
       eczeemJeuken: _eczeemJeuk.round(),
@@ -222,7 +287,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                   if (ingredienten.isNotEmpty) {
                     final naam = naamController.text.trim();
                     context.read<DagboekProvider>().voegVoedselToe(
-                      datum: widget.entry.datum,
+                      datum: _effectieveEntryDatum,
                       dagboekEntryId: _dagboekEntryId,
                       categorie: selectedCategorie,
                       beschrijving: naam.isNotEmpty ? naam : ingredienten.first,
@@ -334,7 +399,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                       TextButton(
                         onPressed: () {
                           context.read<DagboekProvider>().verwijderVoedselItem(
-                            datum: widget.entry.datum,
+                            datum: _effectieveEntryDatum,
                             dagboekEntryId: _dagboekEntryId,
                             voedselIndex: index,
                           );
@@ -366,7 +431,7 @@ class _BewerkScreenState extends State<BewerkScreen> {
                 if (ingredienten.isNotEmpty) {
                   final naam = naamController.text.trim();
                   context.read<DagboekProvider>().updateVoedselEntry(
-                    datum: widget.entry.datum,
+                    datum: _effectieveEntryDatum,
                     dagboekEntryId: _dagboekEntryId,
                     voedselIndex: index,
                     categorie: selectedCategorie,
@@ -425,33 +490,55 @@ class _BewerkScreenState extends State<BewerkScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-            // Date header
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
+            // Date header (aanpasbaar)
+            Material(
+              color: Theme.of(context).colorScheme.primary,
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                onTap: _pickDatum,
                 borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    DateFormat('d MMMM yyyy', 'nl_NL').format(_vasteKalenderdatum),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.calendar_today_rounded, size: 20, color: Theme.of(context).colorScheme.onPrimary),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              DateFormat('d MMMM yyyy', 'nl_NL').format(_vasteKalenderdatum),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                            Text(
+                              DateFormat('EEEE', 'nl_NL').format(_vasteKalenderdatum),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Tik om datum te wijzigen',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontStyle: FontStyle.italic,
+                                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.75),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.edit_calendar_rounded, size: 18, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9)),
+                    ],
                   ),
-                  Text(
-                    DateFormat('EEEE', 'nl_NL').format(_vasteKalenderdatum),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
             const SizedBox(height: 8),
