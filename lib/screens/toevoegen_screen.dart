@@ -365,11 +365,10 @@ class _VoegVoedselToeFormState extends State<VoegVoedselToeForm> {
                 initialTime: TimeOfDay.fromDateTime(_gekozenDatum),
               );
               if (!mounted) return;
-              if (time != null) {
-                setState(() {
-                  _gekozenDatum = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                });
-              }
+              setState(() {
+                final selectedTime = time ?? TimeOfDay.fromDateTime(_gekozenDatum);
+                _gekozenDatum = DateTime(date.year, date.month, date.day, selectedTime.hour, selectedTime.minute);
+              });
             },
           ),
           const SizedBox(height: 16),
@@ -588,11 +587,10 @@ class _VoegGezondheidsMetricToeFormState extends State<VoegGezondheidsMetricToeF
               initialTime: TimeOfDay.fromDateTime(_gekozenDatum),
             );
             if (!mounted) return;
-            if (time != null) {
-              setState(() {
-                _gekozenDatum = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-              });
-            }
+            setState(() {
+              final selectedTime = time ?? TimeOfDay.fromDateTime(_gekozenDatum);
+              _gekozenDatum = DateTime(date.year, date.month, date.day, selectedTime.hour, selectedTime.minute);
+            });
           },
         ),
         const SizedBox(height: 8),

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter build *)",
+      "PowerShell(Get-ChildItem \"$env:USERPROFILE\" -ErrorAction SilentlyContinue | Select-Object Name, Mode)",
+      "PowerShell($env:USERPROFILE)"
+    ]
+  }
+}
