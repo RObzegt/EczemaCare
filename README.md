@@ -85,8 +85,14 @@ flutter run -d ios
 flutter run -d android
 
 # Build iOS release (via Codemagic)
-# See codemagic.yaml for CI/CD configuration
+# Zie CODEMAGIC.md en codemagic.yaml
 ```
+
+### Codemagic (iOS CI/CD)
+
+1. Koppel repo [EczemaCare](https://github.com/RObzegt/EczemaCare) in Codemagic.
+2. Volg **[CODEMAGIC.md](CODEMAGIC.md)** (integratie, signing, env groups).
+3. Eerst workflow **ios-verify**, daarna **ios-release** (TestFlight).
 
 ## Privacy
 

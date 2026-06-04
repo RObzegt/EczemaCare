@@ -1,40 +1,85 @@
-# Codemagic CI/CD for TriggerTrace - iOS
+# Codemagic CI/CD — TriggerTrace / EczemaCare (Flutter iOS)
+# Setup: zie CODEMAGIC.md in de repo-root.
+
 workflows:
+  # Snelle check zonder signing — handig om Codemagic eerst te testen.
+  ios-verify:
+    name: iOS Verify (geen signing)
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Dependencies & analyse
+        script: |
+          set -e
+          flutter --version
+          flutter pub get
+          flutter analyze
+      - name: iOS compile check (no codesign)
+        script: |
+          set -e
+          flutter precache --ios
+          flutter build ios --config-only --no-codesign
+          cd ios && pod install && cd ..
+
   ios-release:
-    name: iOS Release
+    name: iOS Release → TestFlight
     max_build_duration: 60
     instance_type: mac_mini_m2
+
+    integrations:
+      # Maak in Codemagic: Team/Personal → Integrations → Developer Portal
+      # Gebruik dezelfde naam als hieronder (of pas beide aan).
+      app_store_connect: EczemaCare
 
     environment:
       groups:
         - apiconfig
         - apple_auth
       ios_signing:
-        provisioning_profiles:
-          - "EczemaCare ios_app_store 1772991975"
+        distribution_type: app_store
+        bundle_identifier: com.orions.eczemacare
       vars:
-        BUNDLE_ID: "com.orions.eczemacare"
-        ARCHIVE_PATH: "/Users/builder/clone/build/ios/xcarchive/Runner.xcarchive"
-        EXPORT_PATH: "/Users/builder/clone/build/ios/ipa"
+        BUNDLE_ID: com.orions.eczemacare
+        ARCHIVE_PATH: /Users/builder/clone/build/ios/xcarchive/Runner.xcarchive
+        EXPORT_PATH: /Users/builder/clone/build/ios/ipa
       flutter: stable
       xcode: latest
       cocoapods: default
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+      tag_patterns:
+        - pattern: "v*"
+          include: true
 
     scripts:
       - name: Install dependencies
         script: |
           set -e
+          flutter --version
           flutter pub get
           flutter precache --ios
 
       - name: Sync CocoaPods with Podfile
         script: |
           set -e
-          # Flutter may upgrade Podfile (UIScene, SPM) during ios setup — run that first,
-          # then pod install so Manifest.lock matches before the release build.
           flutter build ios --config-only --no-codesign \
-            --dart-define=REVENUECAT_APPLE_KEY=$REVENUECAT_APPLE_KEY \
-            --dart-define=REVENUECAT_GOOGLE_KEY=$REVENUECAT_GOOGLE_KEY
+            --dart-define=REVENUECAT_APPLE_KEY=${REVENUECAT_APPLE_KEY} \
+            --dart-define=REVENUECAT_GOOGLE_KEY=${REVENUECAT_GOOGLE_KEY}
           cd ios
           pod install --repo-update
           cd ..
@@ -51,7 +96,9 @@ workflows:
           NEW_PATCH=$((PATCH + 1))
           NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
 
-          BUILD_NUM=$((${BUILD_NUMBER:-0} + 500))
+          # Codemagic build number (fallback 500+ als niet gezet)
+          CM_NUM="${CM_BUILD_NUMBER:-${BUILD_NUMBER:-0}}"
+          BUILD_NUM=$((CM_NUM + 500))
           if [ "$BUILD_NUM" -le 199 ]; then BUILD_NUM=500; fi
 
           echo "=========================================="
@@ -59,7 +106,6 @@ workflows:
           echo "  Build number:      $BUILD_NUM"
           echo "=========================================="
 
-          # Set version via agvtool so xcodebuild archive picks it up
           cd ios
           agvtool new-marketing-version "$NEW_VERSION"
           agvtool new-version -all "$BUILD_NUM"
@@ -69,14 +115,15 @@ workflows:
           flutter build ios --release --no-codesign \
             --build-name="$NEW_VERSION" \
             --build-number="$BUILD_NUM" \
-            --dart-define=REVENUECAT_APPLE_KEY=$REVENUECAT_APPLE_KEY \
-            --dart-define=REVENUECAT_GOOGLE_KEY=$REVENUECAT_GOOGLE_KEY
+            --dart-define=REVENUECAT_APPLE_KEY=${REVENUECAT_APPLE_KEY} \
+            --dart-define=REVENUECAT_GOOGLE_KEY=${REVENUECAT_GOOGLE_KEY}
 
           echo "Verifying final version in Generated.xcconfig:"
           cat ios/Flutter/Generated.xcconfig | grep -E "FLUTTER_BUILD"
 
       - name: Set up code signing
         script: |
+          set -e
           xcode-project use-profiles
 
       - name: Verify signing config
@@ -139,6 +186,7 @@ workflows:
 
           if [ -z "$PROFILE_NAME" ]; then
             echo "ERROR: Could not determine provisioning profile name"
+            echo "Upload in Codemagic: Code signing identities → iOS → profile for com.orions.eczemacare"
             exit 1
           fi
 
@@ -191,14 +239,12 @@ workflows:
           ls -lah "$EXPORT_PATH"
 
     artifacts:
-      - "build/ios/ipa/*.ipa"
-      - "/tmp/xcodebuild_archive.log"
-      - "/tmp/xcodebuild_export.log"
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_archive.log
+      - /tmp/xcodebuild_export.log
 
     publishing:
       app_store_connect:
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        auth: integration
         submit_to_testflight: true
         submit_to_app_store: false
