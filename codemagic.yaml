@@ -4,7 +4,7 @@
 workflows:
   # Snelle check zonder signing — handig om Codemagic eerst te testen.
   ios-verify:
-    name: iOS Verify (geen signing)
+    name: iOS Verify — alleen test, geen IPA
     max_build_duration: 30
     instance_type: mac_mini_m2
     environment:
@@ -36,11 +36,6 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
 
-    integrations:
-      # Maak in Codemagic: Team/Personal → Integrations → Developer Portal
-      # Gebruik dezelfde naam als hieronder (of pas beide aan).
-      app_store_connect: EczemaCare
-
     environment:
       groups:
         - apiconfig
@@ -48,6 +43,8 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.orions.eczemacare
+        provisioning_profiles:
+          - "EczemaCare ios_app_store 1772991975"
       vars:
         BUNDLE_ID: com.orions.eczemacare
         ARCHIVE_PATH: /Users/builder/clone/build/ios/xcarchive/Runner.xcarchive
@@ -245,6 +242,8 @@ workflows:
 
     publishing:
       app_store_connect:
-        auth: integration
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
         submit_to_app_store: false
