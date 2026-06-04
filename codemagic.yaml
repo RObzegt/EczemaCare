@@ -41,8 +41,6 @@ workflows:
         - apiconfig
         - apple_auth
       ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.orions.eczemacare
         provisioning_profiles:
           - "EczemaCare ios_app_store 1772991975"
       vars:
