@@ -1,81 +1,84 @@
 # Codemagic — EczemaCare / TriggerTrace
 
-Stappen om builds op [Codemagic](https://codemagic.io) te laten draaien voor repo  
-`https://github.com/RObzegt/EczemaCare`.
+Repo: `https://github.com/RObzegt/EczemaCare`  
+Bundle ID: `com.orions.eczemacare` | Team: `JTY452RWN4`
 
-## 1. App koppelen
+---
 
-1. Log in op Codemagic → **Add application**.
-2. Kies team → koppel **GitHub** → selecteer **EczemaCare**.
-3. Kies branch **main** → **Check for configuration file** (moet `codemagic.yaml` vinden).
-4. Zet **Project type** op Flutter.
+## Workflows
 
-## 2. Workflows in `codemagic.yaml`
+| Workflow | Wat het doet | Trigger | IPA? |
+|----------|-------------|---------|------|
+| **ios-verify** | Compile-check zonder signing | Handmatig | Nee |
+| **ios-release** | Bouwt IPA → TestFlight | Tag `v*` of handmatig | **Ja** |
 
-| Workflow       | Doel                                      | Signing nodig? |
-|----------------|-------------------------------------------|----------------|
-| `ios-verify`   | `flutter analyze` + iOS compile check     | Nee — **geen IPA, geen TestFlight** |
-| `ios-release`  | IPA + upload naar TestFlight                | Ja             |
+---
 
-**Belangrijk:** een geslaagde **ios-verify** betekent alleen dat de code compileert. Voor TestFlight moet je **ios-release** starten.
+## Stap-voor-stap setup in Codemagic
 
-**Tip:** start eerst met **ios-verify**. Als die slaagt, draai **ios-release**.
+### 1. App koppelen
+1. [codemagic.io](https://codemagic.io) → **Add application**
+2. Koppel GitHub → selecteer repo **EczemaCare**
+3. Branch **main** → **Check for configuration file** → kiest `codemagic.yaml`
 
-## 3. Environment variable groups
+### 2. Environment variable groups
 
-Maak in Codemagic → app → **Environment variables** twee groups:
+Ga naar app → **Environment variables** → maak twee groups.
 
-### Group `apiconfig`
+**Group `apiconfig`**
 
-| Variabele                 | Secret | Opmerking                          |
-|---------------------------|--------|------------------------------------|
-| `REVENUECAT_APPLE_KEY`    | Ja     | RevenueCat iOS public API key      |
-| `REVENUECAT_GOOGLE_KEY`   | Ja     | RevenueCat Android key (placeholder ok voor alleen iOS) |
+| Variabele | Waarde | Secret |
+|-----------|--------|--------|
+| `REVENUECAT_APPLE_KEY` | RevenueCat iOS API key | ✓ |
+| `REVENUECAT_GOOGLE_KEY` | RevenueCat Android key | ✓ |
 
-### Group `apple_auth` (vereist voor ios-release / TestFlight)
+**Group `apple_auth`** ← vereist voor TestFlight-upload
 
-| Variabele                         | Secret | Opmerking                    |
-|-----------------------------------|--------|------------------------------|
-| `APP_STORE_CONNECT_ISSUER_ID`     | Ja     | App Store Connect API        |
-| `APP_STORE_CONNECT_KEY_IDENTIFIER`| Ja     | Key ID                       |
-| `APP_STORE_CONNECT_PRIVATE_KEY`   | Ja     | Inhoud `.p8` (base64 of tekst)|
+| Variabele | Waarde | Secret |
+|-----------|--------|--------|
+| `APP_STORE_CONNECT_ISSUER_ID` | UUID uit App Store Connect | ✓ |
+| `APP_STORE_CONNECT_KEY_IDENTIFIER` | Key ID (10 tekens) | ✓ |
+| `APP_STORE_CONNECT_PRIVATE_KEY` | Inhoud `.p8` bestand | ✓ |
 
-Koppel beide groups aan workflow **ios-release** (staat al in yaml).
+App Store Connect API key aanmaken: **Users & Access → Integrations → App Store Connect API → + nieuw** (rol: App Manager of hoger). Download `.p8` — slechts één keer downloadbaar.
 
-## 4. Code signing (iOS)
+Koppel beide groups aan workflow **ios-release** via de workflow-instellingen in Codemagic.
 
-Codemagic → **Code signing identities** → tab **iOS**:
+### 3. Code signing identities
 
-1. **Distribution certificate** (Apple Distribution) voor team `JTY452RWN4`.
-2. **Provisioning profile** voor bundle `com.orions.eczemacare` (App Store).
-   - Reference name in Codemagic: **`EczemaCare ios_app_store 1772991975`** (zoals in `codemagic.yaml`).
-   - Lokaal bestand: `EczemaCare_ios_app_store_1772991975.mobileprovision` (alleen ter referentie).
+Ga naar app → **Code signing identities** → tab **iOS**:
 
-## 5. Build starten
+1. **Certificate**: upload Apple Distribution `.p12` voor team `JTY452RWN4`
+2. **Provisioning profile**: upload App Store profiel voor `com.orions.eczemacare`
+   - Reference name moet exact zijn: **`EczemaCare ios_app_store 1772991975`**
+   - Of: download nieuw profiel via Apple Developer → Profiles
 
-- **Handmatig:** Codemagic → app → workflow **ios-verify** of **ios-release** → **Start new build**.
-- **Automatisch:** push naar `main` of tag `v*` (zie `triggering` in yaml).
+### 4. Build starten
 
-Versienummer: **ios-release** verhoogt het patch-nummer t.o.v. `pubspec.yaml` en zet build number op `CM_BUILD_NUMBER + 500`.
+**ios-verify** (eerst testen):
+- Codemagic → app → **Start new build** → workflow **ios-verify**
 
-## 6. Veelvoorkomende fouten
+**ios-release** (IPA + TestFlight):
+- Optie A: tag pushen → `git tag v5.0.9 && git push origin v5.0.9`
+- Optie B: **Start new build** → workflow **ios-release**
+
+---
+
+## Wat er in het project is geregeld
+
+- `CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements` staat in alle Runner-configs (Debug/Release/Profile) → IAP-entitlement meegezet in binary
+- `ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES` in alle project-configs → geen archive-crash op Xcode 16+
+- Versienummer = pubspec.yaml versie | build number = `CM_BUILD_NUMBER + 500`
+
+---
+
+## Veelvoorkomende fouten
 
 | Fout | Oplossing |
 |------|-----------|
-| Verify OK maar geen app in TestFlight | Start workflow **ios-release**, niet ios-verify |
-| `xcodebuild archive` exit 65 | Xcode-instelling `ASSETCATALOG_*` moet `YES` zijn (gefixt in repo) |
-| Geen `codemagic.yaml` gevonden | Bestand moet in repo-root op `main` staan |
-| Unknown variable group | Groups `apiconfig` en `apple_auth` aanmaken en koppelen |
-| Pod / Manifest.lock mismatch | Workflow draait al `flutter build ios --config-only` + `pod install` |
-| Signing / profile | Certificaat + App Store-profiel uploaden voor `com.orions.eczemacare` |
-| `flutter` niet gevonden | Project type Flutter + `flutter: stable` in yaml |
-
-## 7. Na een lokale wijziging
-
-```bash
-git add codemagic.yaml CODEMAGIC.md
-git commit -m "Configure Codemagic workflows and setup guide"
-git push origin main
-```
-
-Daarna in Codemagic opnieuw **Check for configuration file** als workflows niet verschijnen.
+| ios-verify OK maar geen TestFlight | Start **ios-release**, niet ios-verify |
+| `Unknown variable group 'apiconfig'` | Group aanmaken en koppelen aan workflow |
+| `No provisioning profile found` | Profiel uploaden met name `EczemaCare ios_app_store 1772991975` |
+| `xcodebuild archive` exit 65 | Check archive.log in artifacts; meist signing- of entitlement-fout |
+| `No such module 'purchases_flutter'` | `pod install --repo-update` opnieuw; pods-cache leegmaken |
+| Build number rejected (duplicate) | App Store Connect accepteert alleen oplopende build nrs; verhoog `+ 500` offset |

@@ -1,22 +1,19 @@
 # Codemagic CI/CD — TriggerTrace / EczemaCare (Flutter iOS)
-# Setup: zie CODEMAGIC.md in de repo-root.
+# Zie CODEMAGIC.md voor setup-instructies.
 
 workflows:
-  # Snelle check zonder signing — handig om Codemagic eerst te testen.
+
+  # ── ios-verify ──────────────────────────────────────────────────────────────
+  # Snelle compile-check zonder signing. Start handmatig in Codemagic UI.
+  # Geen automatische trigger zodat elke push niet dubbel gebuild wordt.
   ios-verify:
-    name: iOS Verify — alleen test, geen IPA
+    name: iOS Verify (geen IPA)
     max_build_duration: 30
     instance_type: mac_mini_m2
     environment:
       flutter: stable
       xcode: latest
       cocoapods: default
-    triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: main
-          include: true
     scripts:
       - name: Dependencies & analyse
         script: |
@@ -31,6 +28,9 @@ workflows:
           flutter build ios --config-only --no-codesign
           cd ios && pod install && cd ..
 
+  # ── ios-release ─────────────────────────────────────────────────────────────
+  # Bouwt IPA en uploadt naar TestFlight.
+  # Vereist: env groups apiconfig + apple_auth, iOS cert + provisioning profile.
   ios-release:
     name: iOS Release → TestFlight
     max_build_duration: 60
@@ -55,10 +55,7 @@ workflows:
 
     triggering:
       events:
-        - push
-      branch_patterns:
-        - pattern: main
-          include: true
+        - tag
       tag_patterns:
         - pattern: "v*"
           include: true
@@ -81,42 +78,29 @@ workflows:
           pod install --repo-update
           cd ..
 
-      - name: Build iOS with auto-bumped version
+      - name: Build iOS (versie uit pubspec + CM build number)
         script: |
           set -e
 
           CURRENT=$(grep '^version:' pubspec.yaml | head -1 | sed 's/version: *//')
-          echo "Current pubspec version: $CURRENT"
-
           VERSION_PART=$(echo "$CURRENT" | sed 's/+.*//')
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_PART"
-          NEW_PATCH=$((PATCH + 1))
-          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+          BUILD_NUM=$(( ${CM_BUILD_NUMBER:-1} + 500 ))
 
-          # Codemagic build number (fallback 500+ als niet gezet)
-          CM_NUM="${CM_BUILD_NUMBER:-${BUILD_NUMBER:-0}}"
-          BUILD_NUM=$((CM_NUM + 500))
-          if [ "$BUILD_NUM" -le 199 ]; then BUILD_NUM=500; fi
-
-          echo "=========================================="
-          echo "  Marketing version: $NEW_VERSION"
-          echo "  Build number:      $BUILD_NUM"
-          echo "=========================================="
+          echo "Version: $VERSION_PART  |  Build: $BUILD_NUM"
 
           cd ios
-          agvtool new-marketing-version "$NEW_VERSION"
+          agvtool new-marketing-version "$VERSION_PART"
           agvtool new-version -all "$BUILD_NUM"
           pod install
           cd ..
 
           flutter build ios --release --no-codesign \
-            --build-name="$NEW_VERSION" \
+            --build-name="$VERSION_PART" \
             --build-number="$BUILD_NUM" \
             --dart-define=REVENUECAT_APPLE_KEY=${REVENUECAT_APPLE_KEY} \
             --dart-define=REVENUECAT_GOOGLE_KEY=${REVENUECAT_GOOGLE_KEY}
 
-          echo "Verifying final version in Generated.xcconfig:"
-          cat ios/Flutter/Generated.xcconfig | grep -E "FLUTTER_BUILD"
+          grep -E "FLUTTER_BUILD" ios/Flutter/Generated.xcconfig
 
       - name: Set up code signing
         script: |
@@ -125,12 +109,10 @@ workflows:
 
       - name: Verify signing config
         script: |
-          echo "=== Xcode version ==="
           xcodebuild -version
-          echo "=== Build version settings ==="
           xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
             -configuration Release -showBuildSettings 2>&1 \
-            | grep -E "MARKETING_VERSION|CURRENT_PROJECT_VERSION|FLUTTER_BUILD|CODE_SIGN|DEVELOPMENT_TEAM|PROVISIONING|PRODUCT_BUNDLE"
+            | grep -E "MARKETING_VERSION|CURRENT_PROJECT_VERSION|CODE_SIGN|DEVELOPMENT_TEAM|PROVISIONING|PRODUCT_BUNDLE|ENTITLEMENTS"
 
       - name: Archive
         script: |
@@ -147,15 +129,11 @@ workflows:
             -allowProvisioningUpdates \
             COMPILER_INDEX_STORE_ENABLE=NO \
             2>&1 | tee /tmp/xcodebuild_archive.log || {
-              echo ""
-              echo "=========================================="
-              echo "  XCODEBUILD ARCHIVE FAILED — last 60 lines:"
-              echo "=========================================="
-              tail -60 /tmp/xcodebuild_archive.log
+              echo "--- XCODEBUILD ARCHIVE FAILED (last 80 lines) ---"
+              tail -80 /tmp/xcodebuild_archive.log
               exit 1
             }
 
-          echo "Archive created: $ARCHIVE_PATH"
           ls -lah "$(dirname "$ARCHIVE_PATH")"
 
       - name: Export IPA
@@ -165,56 +143,52 @@ workflows:
           PROFILE_NAME=$(xcodebuild -workspace ios/Runner.xcworkspace \
             -scheme Runner -configuration Release -showBuildSettings 2>/dev/null \
             | grep 'PROVISIONING_PROFILE_SPECIFIER' | head -1 | sed 's/.*= *//')
-          echo "Resolved provisioning profile: '$PROFILE_NAME'"
 
           if [ -z "$PROFILE_NAME" ]; then
-            echo "PROVISIONING_PROFILE_SPECIFIER is empty, scanning installed profiles..."
             for p in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
               PNAME=$(security cms -D -i "$p" 2>/dev/null | plutil -extract Name raw -o - - 2>/dev/null || true)
-              PBUNDLE=$(security cms -D -i "$p" 2>/dev/null | plutil -extract Entitlements.application-identifier raw -o - - 2>/dev/null || true)
-              echo "  Found: $PNAME ($PBUNDLE)"
+              PBUNDLE=$(security cms -D -i "$p" 2>/dev/null \
+                | plutil -extract Entitlements.application-identifier raw -o - - 2>/dev/null || true)
+              echo "Profile: $PNAME  bundle: $PBUNDLE"
               if echo "$PBUNDLE" | grep -q "com.orions.eczemacare"; then
                 PROFILE_NAME="$PNAME"
-                echo "  Matched!"
+                echo "Matched: $PROFILE_NAME"
                 break
               fi
             done
           fi
 
           if [ -z "$PROFILE_NAME" ]; then
-            echo "ERROR: Could not determine provisioning profile name"
-            echo "Upload in Codemagic: Code signing identities → iOS → profile for com.orions.eczemacare"
+            echo "ERROR: geen provisioning profile gevonden voor com.orions.eczemacare"
+            echo "Upload profiel in Codemagic → Code signing identities → iOS"
             exit 1
           fi
 
-          echo "Using provisioning profile: $PROFILE_NAME"
+          echo "Using profile: $PROFILE_NAME"
 
-          cat > /tmp/ExportOptions.plist << EXPORTEOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>app-store-connect</string>
-            <key>signingStyle</key>
-            <string>manual</string>
-            <key>teamID</key>
-            <string>JTY452RWN4</string>
-            <key>uploadSymbols</key>
-            <true/>
-            <key>compileBitcode</key>
-            <false/>
-            <key>provisioningProfiles</key>
-            <dict>
-              <key>com.orions.eczemacare</key>
-              <string>${PROFILE_NAME}</string>
-            </dict>
-          </dict>
-          </plist>
-          EXPORTEOF
-
-          echo "=== ExportOptions.plist ==="
-          cat /tmp/ExportOptions.plist
+cat > /tmp/ExportOptions.plist << EXPORTEOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>app-store-connect</string>
+  <key>signingStyle</key>
+  <string>manual</string>
+  <key>teamID</key>
+  <string>JTY452RWN4</string>
+  <key>uploadSymbols</key>
+  <true/>
+  <key>compileBitcode</key>
+  <false/>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>com.orions.eczemacare</key>
+    <string>${PROFILE_NAME}</string>
+  </dict>
+</dict>
+</plist>
+EXPORTEOF
 
           mkdir -p "$EXPORT_PATH"
           xcodebuild \
@@ -224,15 +198,11 @@ workflows:
             -exportOptionsPlist /tmp/ExportOptions.plist \
             -allowProvisioningUpdates \
             2>&1 | tee /tmp/xcodebuild_export.log || {
-              echo ""
-              echo "=========================================="
-              echo "  EXPORT FAILED — last 30 lines:"
-              echo "=========================================="
+              echo "--- EXPORT FAILED (last 30 lines) ---"
               tail -30 /tmp/xcodebuild_export.log
               exit 1
             }
 
-          echo "IPA exported to: $EXPORT_PATH"
           ls -lah "$EXPORT_PATH"
 
     artifacts:
