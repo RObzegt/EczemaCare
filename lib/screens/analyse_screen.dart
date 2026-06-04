@@ -6,6 +6,7 @@ import '../models/analyse_resultaat.dart';
 import '../models/dagboek_entry.dart';
 import 'grafiek_view.dart';
 import '../widgets/app_logo.dart';
+import '../services/ai_analyse_service.dart';
 
 class AnalyseScreen extends StatefulWidget {
   const AnalyseScreen({super.key});
@@ -108,10 +109,8 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
                   _buildAnalysisResults(provider.huidigAnalyseResultaat!, entries),
                   const SizedBox(height: 32),
                   
-                  // Grafieken
-                  if (provider.huidigAnalyseResultaat!.dagData.isNotEmpty ||
-                      provider.huidigAnalyseResultaat!.weekData.isNotEmpty ||
-                      provider.huidigAnalyseResultaat!.maandData.isNotEmpty) ...[
+                  // Trend alleen bij voldoende data (≥7 dagen) en een gelogd ingrediënt
+                  if (_toonTrendAnalyse(provider.huidigAnalyseResultaat!, entries)) ...[
                     const _SectionLabel('TREND ANALYSE'),
                     GrafiekenView(
                       dagData: provider.huidigAnalyseResultaat!.dagData,
@@ -178,12 +177,33 @@ class _AnalyseScreenState extends State<AnalyseScreen> {
     return entries;
   }
 
+  int _telUniekeDagen(List<DagboekEntry> entries) {
+    return entries
+        .map((e) => DateTime(e.datum.year, e.datum.month, e.datum.day))
+        .toSet()
+        .length;
+  }
+
+  bool _heeftGenoegData(List<DagboekEntry> entries) {
+    return _telUniekeDagen(entries) >= AIAnalyseService.minDagenVoorAnalyse;
+  }
+
+  bool _toonTrendAnalyse(AnalyseResultaat resultaat, List<DagboekEntry> entries) {
+    if (!_heeftGenoegData(entries)) return false;
+    if (resultaat.topAllergen == 'Onbekend') return false;
+    return resultaat.dagData.isNotEmpty ||
+        resultaat.weekData.isNotEmpty ||
+        resultaat.maandData.isNotEmpty;
+  }
+
   Widget _buildAnalysisResults(AnalyseResultaat resultaat, List<DagboekEntry> entries) {
-    if (resultaat.correlaties.isEmpty) {
-      return const InfoCard(
+    if (!_heeftGenoegData(entries) || resultaat.correlaties.isEmpty) {
+      return InfoCard(
         icoon: Icons.info,
         titel: 'Onvoldoende data',
-        beschrijving: 'Nog niet genoeg data om betrouwbare eczeem-triggers te identificeren.',
+        beschrijving: _heeftGenoegData(entries)
+            ? 'Nog niet genoeg data om betrouwbare eczeem-triggers te identificeren.'
+            : 'Log minimaal ${AIAnalyseService.minDagenVoorAnalyse} dagen voedsel en symptomen om betrouwbare triggers en trendanalyse te zien.',
       );
     }
 

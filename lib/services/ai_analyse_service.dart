@@ -6,13 +6,22 @@ class AIAnalyseService {
   factory AIAnalyseService() => _instance;
   AIAnalyseService._internal();
 
+  /// Minimaal aantal unieke dagboekdagen voor betrouwbare analyse en trendgrafieken.
+  static const int minDagenVoorAnalyse = 7;
+
   // Hoofdanalyse functie - focus op verergering
   Future<AnalyseResultaat> analyseerData(List<DagboekEntry> dagboekEntries) async {
     // Simuleer async processing
     await Future.delayed(const Duration(milliseconds: 1500));
 
+    final uniekeDagen = _telUniekeDagen(dagboekEntries);
+    final genoegData = uniekeDagen >= minDagenVoorAnalyse;
+    final genuttigdeIngredienten = _verzamelGenuttigdeIngredienten(dagboekEntries);
+
     final patronen = _vindEczeemPatronen(dagboekEntries);
-    final correlaties = _berekenEczeemCorrelaties(dagboekEntries);
+    final correlaties = genoegData
+        ? _berekenEczeemCorrelaties(dagboekEntries)
+        : <Correlatie>[];
     
     // Voeg verergerende correlaties toe aan patronen
     for (final corr in correlaties) {
@@ -21,7 +30,7 @@ class AIAnalyseService {
         patronen.add(Patroon(
           beschrijving: '⚠️ Verergering bij: ${corr.voedselItem}',
           frequentie: dagboekEntries.where((e) => e.voedselEntries.any((ve) => 
-            ve.ingredienten.any((ing) => ing.toLowerCase() == itemLower))).length,
+            ve.ingredienten.any((ing) => ing.trim().toLowerCase() == itemLower))).length,
           betrouwbaarheid: corr.correlatieSterkte.abs(),
         ));
       }
@@ -29,20 +38,38 @@ class AIAnalyseService {
 
     final aanbevelingen = _genereerEczeemAanbevelingen(correlaties);
     
-    // Bepaal het top allergen uit correlaties
+    // Trend: alleen een ingrediënt dat daadwerkelijk in het dagboek staat
     String topAllergen = 'Onbekend';
-    if (correlaties.isNotEmpty) {
-      final sterksteCorrelatie = correlaties.reduce((a, b) => 
-          a.correlatieSterkte.abs() > b.correlatieSterkte.abs() ? a : b);
-      topAllergen = sterksteCorrelatie.voedselItem;
-    } else {
-      // Fallback: toon het meest voorkomende allergen voor de grafiek
-      topAllergen = _vindMeestVoorkomendeAllergen(dagboekEntries);
+    if (genoegData && genuttigdeIngredienten.isNotEmpty) {
+      if (correlaties.isNotEmpty) {
+        final metData = correlaties
+            .where((c) => genuttigdeIngredienten.contains(c.voedselItem.toLowerCase()))
+            .toList();
+        if (metData.isNotEmpty) {
+          final sterksteCorrelatie = metData.reduce((a, b) =>
+              a.correlatieSterkte.abs() > b.correlatieSterkte.abs() ? a : b);
+          topAllergen = sterksteCorrelatie.voedselItem;
+        }
+      }
+      if (topAllergen == 'Onbekend') {
+        topAllergen = _vindMeestVoorkomendIngredient(dagboekEntries);
+      }
     }
-    
-    final dagData = _berekenDagGrafiekData(dagboekEntries, topAllergen);
-    final weekData = _berekenWeekGrafiekData(dagboekEntries, topAllergen);
-    final maandData = _berekenMaandGrafiekData(dagboekEntries, topAllergen);
+
+    final trendIngredient = topAllergen != 'Onbekend' &&
+            genuttigdeIngredienten.contains(topAllergen.toLowerCase())
+        ? topAllergen
+        : null;
+
+    final dagData = trendIngredient != null
+        ? _berekenDagGrafiekData(dagboekEntries, trendIngredient)
+        : <DagGrafiekData>[];
+    final weekData = trendIngredient != null
+        ? _berekenWeekGrafiekData(dagboekEntries, trendIngredient)
+        : <WeekGrafiekData>[];
+    final maandData = trendIngredient != null
+        ? _berekenMaandGrafiekData(dagboekEntries, trendIngredient)
+        : <MaandGrafiekData>[];
 
     return AnalyseResultaat(
       patronen: patronen,
@@ -194,31 +221,51 @@ class AIAnalyseService {
     return allScores.reduce((a, b) => a + b) / allScores.length;
   }
 
-  // Grafiek data generering
-  List<DagGrafiekData> _berekenDagGrafiekData(List<DagboekEntry> entries, String topAllergen) {
-    final sortedEntries = List<DagboekEntry>.from(entries)
-      ..sort((a, b) => a.datum.compareTo(b.datum));
-    
-    final allergenLijst = _getAllergenIngredients(topAllergen);
-    final allergenKeywords = allergenLijst.map((e) => e.toLowerCase()).toList();
-    
-    // Zorg dat het topAllergen zelf ook in de keywords staat (voor specifieke ingrediënten)
-    if (!allergenKeywords.contains(topAllergen.toLowerCase())) {
-      allergenKeywords.add(topAllergen.toLowerCase());
-    }
-    
-    return sortedEntries.map((entry) {
-      // Allergen intake bepalen
-      double allergenIntake = 0;
+  int _telUniekeDagen(List<DagboekEntry> entries) {
+    return entries
+        .map((e) => DateTime(e.datum.year, e.datum.month, e.datum.day))
+        .toSet()
+        .length;
+  }
+
+  Set<String> _verzamelGenuttigdeIngredienten(List<DagboekEntry> entries) {
+    final ingredienten = <String>{};
+    for (final entry in entries) {
       for (final voedsel in entry.voedselEntries) {
-        for (final ingredient in voedsel.ingredienten) {
-          final lowerIng = ingredient.toLowerCase();
-          if (allergenKeywords.any((kw) => lowerIng.contains(kw))) {
-            allergenIntake += 2;
+        for (final ing in voedsel.ingredienten) {
+          final trimmed = ing.trim();
+          if (trimmed.isNotEmpty) {
+            ingredienten.add(trimmed.toLowerCase());
           }
         }
       }
-      allergenIntake = allergenIntake.clamp(0, 10).toDouble();
+    }
+    return ingredienten;
+  }
+
+  bool _ingredientGenuttigd(String ingredient, String target) {
+    return ingredient.trim().toLowerCase() == target.trim().toLowerCase();
+  }
+
+  double _berekenIngredientIntakeOpDag(DagboekEntry entry, String ingredient) {
+    double intake = 0;
+    for (final voedsel in entry.voedselEntries) {
+      for (final ing in voedsel.ingredienten) {
+        if (_ingredientGenuttigd(ing, ingredient)) {
+          intake += 2;
+        }
+      }
+    }
+    return intake.clamp(0, 10).toDouble();
+  }
+
+  // Grafiek data generering — alleen exact gelogd ingrediënt
+  List<DagGrafiekData> _berekenDagGrafiekData(List<DagboekEntry> entries, String ingredient) {
+    final sortedEntries = List<DagboekEntry>.from(entries)
+      ..sort((a, b) => a.datum.compareTo(b.datum));
+    
+    return sortedEntries.map((entry) {
+      final allergenIntake = _berekenIngredientIntakeOpDag(entry, ingredient);
       
       // Eczeem level bepalen
       final eczeemLevel = _berekenGemiddeldeEczeem([entry]);
@@ -235,7 +282,7 @@ class AIAnalyseService {
     }).toList();
   }
 
-  List<WeekGrafiekData> _berekenWeekGrafiekData(List<DagboekEntry> entries, String topAllergen) {
+  List<WeekGrafiekData> _berekenWeekGrafiekData(List<DagboekEntry> entries, String ingredient) {
     final weekMap = <int, List<DagboekEntry>>{};
     
     for (final entry in entries) {
@@ -243,27 +290,13 @@ class AIAnalyseService {
       weekMap.putIfAbsent(weekNum, () => []).add(entry);
     }
     
-    final allergenLijst = _getAllergenIngredients(topAllergen);
-    
     return weekMap.entries.map((e) {
       final weekNum = e.key;
       final weekEntries = e.value;
       
       double totalAllergen = 0;
-      final allergenKeywords = allergenLijst.map((e) => e.toLowerCase()).toList();
-      if (!allergenKeywords.contains(topAllergen.toLowerCase())) {
-        allergenKeywords.add(topAllergen.toLowerCase());
-      }
-      
       for (final entry in weekEntries) {
-        for (final voedsel in entry.voedselEntries) {
-          for (final ingredient in voedsel.ingredienten) {
-            final lowerIng = ingredient.toLowerCase();
-            if (allergenKeywords.any((kw) => lowerIng.contains(kw))) {
-              totalAllergen += 2;
-            }
-          }
-        }
+        totalAllergen += _berekenIngredientIntakeOpDag(entry, ingredient);
       }
       final gemiddeldeAllergen = (totalAllergen / weekEntries.length).clamp(0, 10).toDouble();
       
@@ -282,7 +315,7 @@ class AIAnalyseService {
       ..sort((a, b) => a.weekNum.compareTo(b.weekNum));
   }
 
-  List<MaandGrafiekData> _berekenMaandGrafiekData(List<DagboekEntry> entries, String topAllergen) {
+  List<MaandGrafiekData> _berekenMaandGrafiekData(List<DagboekEntry> entries, String ingredient) {
     final maandMap = <String, List<DagboekEntry>>{};
     final maandNamenNL = [
       '', 'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
@@ -294,8 +327,6 @@ class AIAnalyseService {
       maandMap.putIfAbsent(key, () => []).add(entry);
     }
     
-    final allergenLijst = _getAllergenIngredients(topAllergen);
-    
     return maandMap.entries.map((e) {
       final parts = e.key.split('-');
       final jaar = int.parse(parts[0]);
@@ -303,20 +334,8 @@ class AIAnalyseService {
       final maandEntries = e.value;
       
       double totalAllergen = 0;
-      final allergenKeywords = allergenLijst.map((e) => e.toLowerCase()).toList();
-      if (!allergenKeywords.contains(topAllergen.toLowerCase())) {
-        allergenKeywords.add(topAllergen.toLowerCase());
-      }
-      
       for (final entry in maandEntries) {
-        for (final voedsel in entry.voedselEntries) {
-          for (final ingredient in voedsel.ingredienten) {
-            final lowerIng = ingredient.toLowerCase();
-            if (allergenKeywords.any((kw) => lowerIng.contains(kw))) {
-              totalAllergen += 2;
-            }
-          }
-        }
+        totalAllergen += _berekenIngredientIntakeOpDag(entry, ingredient);
       }
       final gemiddeldeAllergen = (totalAllergen / maandEntries.length).clamp(0, 10).toDouble();
       
@@ -338,71 +357,32 @@ class AIAnalyseService {
       });
   }
 
-  // Helper: Vind meest voorkomende allergen
-  String _vindMeestVoorkomendeAllergen(List<DagboekEntry> entries) {
+  // Helper: meest gelogde ingrediënt (geen allergen-categorieën)
+  String _vindMeestVoorkomendIngredient(List<DagboekEntry> entries) {
     if (entries.isEmpty) return 'Onbekend';
-    
+
     final counts = <String, int>{};
-    final allergens = {
-      'Zuivel': ['Melk', 'Yoghurt', 'Kaas', 'Boter', 'Kwark'],
-      'Gluten': ['Brood', 'Pasta', 'Toast', 'Pannenkoeken', 'Haver'],
-      'Noten': ['Noten', 'Pindas'],
-      'Eieren': ['Ei', 'Eieren'],
-    };
+    final displayNamen = <String, String>{};
 
     for (final entry in entries) {
       for (final ve in entry.voedselEntries) {
         for (final ing in ve.ingredienten) {
-          final lowerIng = ing.toLowerCase();
-          for (final allergen in allergens.entries) {
-            if (allergen.value.any((kw) => lowerIng.contains(kw.toLowerCase()))) {
-              counts[allergen.key] = (counts[allergen.key] ?? 0) + 1;
-            }
-          }
+          final trimmed = ing.trim();
+          if (trimmed.isEmpty) continue;
+          final key = trimmed.toLowerCase();
+          counts[key] = (counts[key] ?? 0) + 1;
+          displayNamen.putIfAbsent(
+            key,
+            () => trimmed[0].toUpperCase() + trimmed.substring(1),
+          );
         }
       }
     }
 
     if (counts.isEmpty) return 'Onbekend';
-    
-    final sorted = counts.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    return sorted.first.key;
-  }
 
-  // Helper: Geef ingrediënten voor een allergen (of combinatie)
-  List<String> _getAllergenIngredients(String allergen) {
-    if (allergen == 'Onbekend' || allergen == 'Klinisch' || allergen == 'Behandeling') {
-      return [];
-    }
-
-    final allergenMap = {
-      'Zuivel': ['Melk', 'Yoghurt', 'Kaas', 'Boter', 'Kwark', 'Slagroom'],
-      'Gluten': ['Brood', 'Pasta', 'Toast', 'Pannenkoeken', 'Haver', 'Tarwe'],
-      'Noten': ['Noten', 'Pindas', 'Walnoten', 'Amandelen'],
-      'Eieren': ['Ei', 'Eieren'],
-      'Suiker': ['Suiker', 'Snoep', 'Chocolade', 'Honing'],
-    };
-    
-    // Check of het een combinatie is (bevat " + ")
-    if (allergen.contains(' + ')) {
-      final delen = allergen.split(' + ');
-      final allIngredients = <String>[];
-      for (final deel in delen) {
-        final ingredients = allergenMap[deel.trim()];
-        if (ingredients != null) {
-          allIngredients.addAll(ingredients);
-        }
-      }
-      return allIngredients;
-    }
-    
-    final results = allergenMap[allergen] ?? [];
-    // Als het niet in de map staat, is het waarschijnlijk een specifiek ingrediënt
-    if (results.isEmpty) {
-      return [allergen];
-    }
-    return results;
+    final top = counts.entries.reduce((a, b) => a.value >= b.value ? a : b);
+    return displayNamen[top.key] ?? top.key;
   }
 
   // Helper: Bereken weeknummer van een datum
