@@ -166,29 +166,23 @@ workflows:
 
           echo "Using profile: $PROFILE_NAME"
 
-cat > /tmp/ExportOptions.plist << EXPORTEOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>method</key>
-  <string>app-store-connect</string>
-  <key>signingStyle</key>
-  <string>manual</string>
-  <key>teamID</key>
-  <string>JTY452RWN4</string>
-  <key>uploadSymbols</key>
-  <true/>
-  <key>compileBitcode</key>
-  <false/>
-  <key>provisioningProfiles</key>
-  <dict>
-    <key>com.orions.eczemacare</key>
-    <string>${PROFILE_NAME}</string>
-  </dict>
-</dict>
-</plist>
-EXPORTEOF
+          {
+            echo '<?xml version="1.0" encoding="UTF-8"?>'
+            echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">'
+            echo '<plist version="1.0"><dict>'
+            echo '  <key>method</key><string>app-store-connect</string>'
+            echo '  <key>signingStyle</key><string>manual</string>'
+            echo '  <key>teamID</key><string>JTY452RWN4</string>'
+            echo '  <key>uploadSymbols</key><true/>'
+            echo '  <key>compileBitcode</key><false/>'
+            echo '  <key>provisioningProfiles</key>'
+            echo '  <dict>'
+            echo "    <key>com.orions.eczemacare</key><string>${PROFILE_NAME}</string>"
+            echo '  </dict>'
+            echo '</dict></plist>'
+          } > /tmp/ExportOptions.plist
+
+          echo "=== ExportOptions.plist ===" && cat /tmp/ExportOptions.plist
 
           mkdir -p "$EXPORT_PATH"
           xcodebuild \
