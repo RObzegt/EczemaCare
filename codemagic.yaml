@@ -76,13 +76,13 @@ workflows:
           pod install --repo-update
           cd ..
 
-      - name: Build iOS (versie uit pubspec + CM build number)
+      - name: Build iOS (versie uit pubspec + datum build number)
         script: |
           set -e
 
-          CURRENT=$(grep '^version:' pubspec.yaml | head -1 | sed 's/version: *//')
-          VERSION_PART=$(echo "$CURRENT" | sed 's/+.*//')
-          BUILD_NUM=$(( ${CM_BUILD_NUMBER:-1} + 500 ))
+          VERSION_PART=$(grep '^version:' pubspec.yaml | head -1 | sed 's/version: *//' | sed 's/+.*//')
+          # Uniek build number: YYMMDDHHM — bijv. 260605001 — nooit duplicate
+          BUILD_NUM=$(date -u +%y%m%d%H%M)
 
           echo "Version: $VERSION_PART  |  Build: $BUILD_NUM"
 
